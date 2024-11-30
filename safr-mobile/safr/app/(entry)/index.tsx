@@ -1,12 +1,14 @@
 import React from 'react';
 import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
-import {Link} from 'expo-router';
+import {Link, router} from 'expo-router';
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
+import ApolloButton from "@/components/ui/apollo-button";
+import globalStyles from "@/constants/global-styles";
 
 export default function HomeScreen() {
     return (
         <AnimatedGradientBg>
-            <View style={styles.container}>
+            <View style={globalStyles.container}>
                 {/* Image at the top */}
                 <Image
                     source={require('@/assets/images/header-images/security-shield.png')}
@@ -17,29 +19,25 @@ export default function HomeScreen() {
                 <Text style={styles.title}>Welcome to Safr.</Text>
 
                 {/* Login Button */}
-                <TouchableOpacity style={styles.loginButton}>
-                    <Link href="/login" style={styles.loginText}>
-                        Login
-                    </Link>
-                </TouchableOpacity>
+                <ApolloButton
+                    title="Login"
+                    onPress={() => router.push('/login')}
+                    theme="dark"
+                    style={styles.loginButton}
+                />
 
                 {/* Register Link */}
                 <Text style={styles.registerPrompt}>
                     New user? <Link href="/signup" style={styles.registerText}>Register</Link>
                 </Text>
+
+                <Link href="/(tabs)/home" style={styles.registerText}>home</Link>
             </View>
         </AnimatedGradientBg>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 60,
-    },
     image: {
         width: 200,
         height: 200,
@@ -52,21 +50,10 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     loginButton: {
-        backgroundColor: '#1f2937',
         paddingVertical: 12,
         paddingHorizontal: 60,
         borderRadius: 25,
         marginBottom: 40,
-        shadowColor: '#000',
-        shadowOffset: {width: 0, height: 2},
-        shadowOpacity: 0.8,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    loginText: {
-        color: '#ffffff',
-        fontSize: 18,
-        fontWeight: '500',
     },
     registerPrompt: {
         fontSize: 14,

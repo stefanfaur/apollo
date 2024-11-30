@@ -3,6 +3,7 @@ import {View, Text, Image, StyleSheet} from 'react-native';
 import GradientBg from "@/components/ui/gradient-bg";
 import ApolloTextInput from "@/components/ui/apollo-text-input";
 import ApolloButton from "@/components/ui/apollo-button";
+import globalStyles from "@/constants/global-styles";
 
 export default function LoginScreen() {
     const [username, setUsername] = useState('');
@@ -10,7 +11,7 @@ export default function LoginScreen() {
 
     return (
         <GradientBg theme="dark">
-            <View style={styles.container}>
+            <View style={globalStyles.container}>
                 {/* Top Image */}
                 <Image
                     source={require('@/assets/images/header-images/login.png')}
@@ -45,13 +46,6 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 60,
-    },
     image: {
         width: 200,
         height: 200,

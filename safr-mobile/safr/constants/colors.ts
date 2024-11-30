@@ -20,7 +20,7 @@ export const Colors = {
     icon: '#9CA3AF',
     buttonBackground: '#1F2937',
     buttonText: '#FFFFFF',
-    gradientStart: '#0A0F2C',
+    gradientStart: '#1f254d',
     gradientEnd: '#1F2937',
     inputAccent: 'rgba(255,199,79,0.2)',
   },

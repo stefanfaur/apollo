@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import GradientBg from "@/components/ui/gradient-bg";
 import ApolloTextInput from "@/components/ui/apollo-text-input";
 import ApolloButton from "@/components/ui/apollo-button";
+import globalStyles from "@/constants/global-styles";
 
 export default function SignupScreem() {
   const [username, setUsername] = useState('');
@@ -13,7 +14,7 @@ export default function SignupScreem() {
 
   return (
       <GradientBg theme="dark">
-        <View style={styles.container}>
+        <View style={globalStyles.container}>
           {/* Top Image */}
           <Image
               source={require('@/assets/images/header-images/register.png')} // Update this path based on your actual image
@@ -68,13 +69,6 @@ export default function SignupScreem() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 40, // Adjust to move closer to the top
-  },
   image: {
     width: 150,
     height: 150,
