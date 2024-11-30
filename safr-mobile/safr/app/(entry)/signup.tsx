@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import GradientBackground from "@/components/ui/gradient-background";
+import GradientBg from "@/components/ui/gradient-bg";
 import ApolloTextInput from "@/components/ui/apollo-text-input";
 import ApolloButton from "@/components/ui/apollo-button";
 
@@ -12,7 +12,7 @@ export default function SignupScreem() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   return (
-      <GradientBackground theme="dark">
+      <GradientBg theme="dark">
         <View style={styles.container}>
           {/* Top Image */}
           <Image
@@ -63,7 +63,7 @@ export default function SignupScreem() {
           {/* Submit Button */}
           <ApolloButton title="Submit" onPress={() => console.log('Register')} theme="dark" />
         </View>
-      </GradientBackground>
+      </GradientBg>
   );
 }
 

@@ -1,11 +1,11 @@
 import React from 'react';
 import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
 import {Link} from 'expo-router';
-import GradientBackground from "@/components/ui/gradient-background";
+import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 
 export default function HomeScreen() {
     return (
-        <GradientBackground theme="dark">
+        <AnimatedGradientBg>
             <View style={styles.container}>
                 {/* Image at the top */}
                 <Image
@@ -28,7 +28,7 @@ export default function HomeScreen() {
                     New user? <Link href="/signup" style={styles.registerText}>Register</Link>
                 </Text>
             </View>
-        </GradientBackground>
+        </AnimatedGradientBg>
     );
 }
 

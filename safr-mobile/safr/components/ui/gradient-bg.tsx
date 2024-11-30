@@ -9,7 +9,7 @@ interface GradientBackgroundProps {
     theme?: 'light' | 'dark';
 }
 
-export default function GradientBackground({
+export default function GradientBg({
                                                children,
                                                style,
                                                theme = 'dark',
