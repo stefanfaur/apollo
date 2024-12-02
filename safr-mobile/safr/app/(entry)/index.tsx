@@ -16,7 +16,7 @@ export default function HomeScreen() {
                 />
 
                 {/* Title */}
-                <Text style={styles.title}>Welcome to Safr.</Text>
+                <Text style={styles.title}>apollo.</Text>
 
                 {/* Login Button */}
                 <ApolloButton
@@ -44,10 +44,23 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     title: {
-        fontSize: 24,
+        fontSize: 36,
         fontWeight: 'bold',
         color: '#ffffff',
         marginBottom: 30,
+        // Layered text shadow for glow effect
+        textShadowColor: 'rgba(255, 255, 255, 0.7)',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 5,
+        // Additional styling for enhanced visibility
+        letterSpacing: 1,
+        // For iOS
+        shadowColor: '#fff',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
+        // For Android
+        elevation: 5,
     },
     loginButton: {
         paddingVertical: 12,
