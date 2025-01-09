@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function DevicesScreen() {
+export default function UsersScreen() {
   return (
     <View style={styles.container}>
-      <Text>Devices</Text>
+      <Text>Application Settings</Text>
     </View>
   );
 }

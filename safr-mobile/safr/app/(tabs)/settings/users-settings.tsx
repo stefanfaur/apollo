@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function UsersScreen() {
   return (
     <View style={styles.container}>
-      <Text>Users</Text>
+      <Text>User Settings</Text>
     </View>
   );
 }

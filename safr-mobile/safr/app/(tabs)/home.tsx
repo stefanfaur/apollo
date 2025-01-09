@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import GradientBg from '@/components/ui/gradient-bg';
 import { Ionicons } from '@expo/vector-icons';
 import globalStyles from "@/constants/global-styles";
+import {Colors} from "@/constants/colors";
 
 export default function HomeScreen() {
   return (
@@ -46,6 +47,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     borderRadius: 10,
     marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
   },
   addDeviceText: {
     marginLeft: 10,

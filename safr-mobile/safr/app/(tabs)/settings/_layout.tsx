@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/colors";
 
-export default function TabLayout() {
+export default function SettingsTabLayout() {
     return (
         <Tabs
             screenOptions={({ route }) => ({
@@ -10,24 +10,20 @@ export default function TabLayout() {
                     let iconName: string;
 
                     switch (route.name) {
-                        case "home":
-                            iconName = focused ? "home" : "home-outline";
+                        case "users-settings":
+                            iconName = focused ? "people" : "people-outline";
                             break;
-                        case "dashboard":
-                            iconName = focused ? "analytics" : "analytics-outline";
-                            break;
-                        case "notifications":
-                            iconName = focused ? "notifications" : "notifications-outline";
-                            break;
-                        case "settings":
+                        case "application-settings":
                             iconName = focused ? "settings" : "settings-outline";
+                            break;
+                        case "account-settings":
+                            iconName = focused ? "person" : "person-outline";
                             break;
                         default:
                             iconName = "ellipse"; // fallback icon
                     }
 
-                    // @ts-ignore no clue why this is throwing an error
-                    // nevertheless, it works just fine
+                    // @ts-ignore
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
                 tabBarActiveTintColor: Colors.dark.primary,
@@ -36,19 +32,18 @@ export default function TabLayout() {
                     backgroundColor: Colors.dark.gradientEnd,
                     borderTopWidth: 0,
                     elevation: 10,
+                    height: 60,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
                 },
                 tabBarShowLabel: true,
-                headerShown: false, // hide top header
+                headerShown: false,
             })}
         >
-            <Tabs.Screen name="home" options={{ title: "Home" }} />
-            <Tabs.Screen name="notifications" options={{ title: "Events" }} />
-            <Tabs.Screen name="dashboard" options={{ title: "Dash" }} />
-            {/* Settings Tab points to nested settings navigator */}
-            <Tabs.Screen name="settings" options={{ title: "Settings" }} />
+            <Tabs.Screen name="users-settings" options={{ title: "Users" }} />
+            <Tabs.Screen name="application-settings" options={{ title: "Application" }} />
+            <Tabs.Screen name="account-settings" options={{ title: "Account" }} />
         </Tabs>
     );
 }

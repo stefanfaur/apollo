@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function DashboardScreen() {
+export default function UsersScreen() {
   return (
     <View style={styles.container}>
-      <Text>Dashboard</Text>
+      <Text>Account Settings</Text>
     </View>
   );
 }
