@@ -45,8 +45,8 @@ export default function TabLayout() {
             })}
         >
             <Tabs.Screen name="home" options={{ title: "Home" }} />
-            <Tabs.Screen name="notifications" options={{ title: "Events" }} />
             <Tabs.Screen name="dashboard" options={{ title: "Dash" }} />
+            <Tabs.Screen name="notifications" options={{ title: "Events" }} />
             {/* Settings Tab points to nested settings navigator */}
             <Tabs.Screen name="settings" options={{ title: "Settings" }} />
         </Tabs>

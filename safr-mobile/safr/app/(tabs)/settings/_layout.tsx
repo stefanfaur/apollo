@@ -10,9 +10,6 @@ export default function SettingsTabLayout() {
                     let iconName: string;
 
                     switch (route.name) {
-                        case "users-settings":
-                            iconName = focused ? "people" : "people-outline";
-                            break;
                         case "application-settings":
                             iconName = focused ? "settings" : "settings-outline";
                             break;
@@ -41,7 +38,6 @@ export default function SettingsTabLayout() {
                 headerShown: false,
             })}
         >
-            <Tabs.Screen name="users-settings" options={{ title: "Users" }} />
             <Tabs.Screen name="application-settings" options={{ title: "Application" }} />
             <Tabs.Screen name="account-settings" options={{ title: "Account" }} />
         </Tabs>
