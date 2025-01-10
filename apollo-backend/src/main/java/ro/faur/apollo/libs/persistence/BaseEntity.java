@@ -3,6 +3,7 @@ package ro.faur.apollo.libs.persistence;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class BaseEntity {
     @Column(name = "deleted", nullable = false, columnDefinition = "boolean default false")
     private boolean deleted;
 
+    @PrePersist
     public void prePersist() {
         this.uuid = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();

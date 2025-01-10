@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# TODO: do this properly
+### secrets ###
+application.yaml

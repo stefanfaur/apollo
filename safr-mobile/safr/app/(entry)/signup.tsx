@@ -17,7 +17,7 @@ export default function SignupScreem() {
         <View style={globalStyles.container}>
           {/* Top Image */}
           <Image
-              source={require('@/assets/images/header-images/register.png')} // Update this path based on your actual image
+              source={require('@/assets/images/header-images/register.png')} 
               style={styles.image}
           />
 
