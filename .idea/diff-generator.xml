@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DiffGenerationConfig">
+    <option name="snapshotDb" value="false" />
+    <option name="snapshotDbValue" value="c263f1a3-25e4-43f2-a564-e95870466a6b" />
+    <option name="snapshotModelValue" value="Default" />
+    <option name="sourceModelValue" value="Default" />
+    <option name="targetDbValue" value="c263f1a3-25e4-43f2-a564-e95870466a6b__apollo_db_public" />
+    <option name="updateChangeLogPath" value="apollo-backend/src/main/resources/db/changelog/master.xml" />
+    <option name="updateDbConnectionName" value="c263f1a3-25e4-43f2-a564-e95870466a6b" />
+  </component>
+</project>

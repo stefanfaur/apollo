@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - 'POSTGRES_DB=apollo_db'
+      - 'POSTGRES_PASSWORD=postgreS'
+      - 'POSTGRES_USER=faur'
+    ports:
+      - '5432:5432'
+  redis:
+    image: 'redis:latest'
+    ports:
+      - '6379'
