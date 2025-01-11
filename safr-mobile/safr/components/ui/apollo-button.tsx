@@ -52,8 +52,8 @@ const styles = (theme: 'light' | 'dark') =>
     StyleSheet.create({
         button: {
             backgroundColor: Colors[theme].buttonBackground,
-            paddingVertical: 12,
-            paddingHorizontal: 20,
+            paddingVertical: 16,
+            paddingHorizontal: 24,
             borderRadius: 25,
             alignItems: 'center',
             justifyContent: 'center',

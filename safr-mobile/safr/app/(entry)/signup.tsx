@@ -1,41 +1,49 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import GradientBg from "@/components/ui/gradient-bg";
-import ApolloTextInput from "@/components/ui/apollo-text-input";
-import ApolloButton from "@/components/ui/apollo-button";
-import globalStyles from "@/constants/global-styles";
+import { View, Text, Image, StyleSheet, Alert } from 'react-native';
+import GradientBg from '@/components/ui/gradient-bg';
+import ApolloTextInput from '@/components/ui/apollo-text-input';
+import ApolloButton from '@/components/ui/apollo-button';
+import globalStyles from '@/constants/global-styles';
+import {AuthService, RegisterRequest} from "@/services/auth/auth-service";
 
-export default function SignupScreem() {
-  const [username, setUsername] = useState('');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+export default function SignupScreen(): JSX.Element {
+  const [username, setUsername] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleRegister = async () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const requestData: RegisterRequest = { username, email, password };
+      const data = await AuthService.register(requestData);
+      Alert.alert('Registration Successful', data.message);
+    } catch (error: any) {
+      Alert.alert('Registration Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
       <GradientBg theme="dark">
         <View style={globalStyles.container}>
-          {/* Top Image */}
           <Image
-              source={require('@/assets/images/header-images/register.png')} 
+              source={require('@/assets/images/header-images/register.png')}
               style={styles.image}
           />
-
-          {/* Title */}
           <Text style={styles.title}>Register</Text>
-
-          {/* Inputs */}
           <View style={styles.inputContainer}>
             <ApolloTextInput
                 placeholder="Username"
                 value={username}
                 onChangeText={setUsername}
-                theme="dark"
-            />
-            <ApolloTextInput
-                placeholder="Name"
-                value={name}
-                onChangeText={setName}
                 theme="dark"
             />
             <ApolloTextInput
@@ -60,9 +68,12 @@ export default function SignupScreem() {
                 theme="dark"
             />
           </View>
-
-          {/* Submit Button */}
-          <ApolloButton title="Submit" onPress={() => console.log('Register')} theme="dark" />
+          <ApolloButton
+              title={loading ? 'Loading...' : 'Submit'}
+              onPress={handleRegister}
+              theme="dark"
+              disabled={loading}
+          />
         </View>
       </GradientBg>
   );
@@ -81,7 +92,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   inputContainer: {
-    width: '80%', // Maintain consistency
+    width: '80%',
     marginBottom: 20,
   },
 });

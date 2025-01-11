@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import GradientBg from '@/components/ui/gradient-bg';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,9 +6,22 @@ import globalStyles from '@/constants/global-styles';
 import { Colors } from '@/constants/colors';
 import DeviceCard from '@/components/ui/device-card';
 import DropdownListItem from '@/components/ui/dropdown-list-item';
+import {getToken} from "@/utils/secureStore";
 
 export default function HomeScreen() {
   const [hasAnyHomes, setHasAnyHomes] = useState(false);
+
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      const storedToken = await getToken();
+      console.log("Token is:", storedToken);
+      setToken(storedToken);
+    };
+
+    fetchToken();
+  }, []);
 
   return (
       <GradientBg theme="dark">

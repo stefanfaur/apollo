@@ -31,7 +31,7 @@ export default function HomeScreen() {
                     New user? <Link href="/signup" style={styles.registerText}>Register</Link>
                 </Text>
 
-                <Link href="/(tabs)/home" style={styles.registerText}>home</Link>
+                {/*<Link href="/(tabs)/home" style={styles.registerText}>home</Link>*/}
             </View>
         </AnimatedGradientBg>
     );

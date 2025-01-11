@@ -13,6 +13,7 @@ import ro.faur.apollo.libs.auth.jwt.dtos.LoginRequest;
 import ro.faur.apollo.libs.auth.jwt.dtos.RegisterRequest;
 import ro.faur.apollo.libs.auth.user.domain.User;
 import ro.faur.apollo.libs.auth.user.repository.UserRepository;
+import ro.faur.apollo.libs.auth.user.service.AuthService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,11 +22,13 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
+    private final AuthService authService;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserRepository userRepository) {
+    public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider, UserRepository userRepository, AuthService authService) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
         this.userRepository = userRepository;
+        this.authService = authService;
     }
 
     @PostMapping("/login")
@@ -46,7 +49,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         try {
-            // Check if username is already taken
+            // check if username is already taken
             if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
                 return ResponseEntity.badRequest().body("Username is already taken");
             }
@@ -54,7 +57,7 @@ public class AuthController {
                 return ResponseEntity.badRequest().body("Email is already taken");
             }
 
-            // Create a new user
+            // create a new user
             User user = new User();
             user.setUsername(registerRequest.getUsername());
             user.setPassword(new BCryptPasswordEncoder().encode(registerRequest.getPassword()));
@@ -64,8 +67,19 @@ public class AuthController {
             userRepository.save(user);
             return ResponseEntity.ok("User registered successfully");
         } catch (Exception e) {
-            // Handle unexpected exceptions
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during registration");
         }
     }
+
+    @PostMapping("/oauth2/login/google")
+    public ResponseEntity<?> oauth2Login(@RequestParam("token") String googleToken) {
+        try {
+            String jwt = authService.authenticateWithGoogle(googleToken);
+            return ResponseEntity.ok(new JwtResponse(jwt));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
+        }
+    }
+
+
 }
