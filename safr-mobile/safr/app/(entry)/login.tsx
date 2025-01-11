@@ -8,7 +8,6 @@ import * as AuthSession from 'expo-auth-session';
 import { AuthService, LoginRequest } from '@/services/auth/auth-service';
 import {saveToken} from "@/utils/secureStore";
 import {useNavigation} from "expo-router";
-import {AntDesign} from "@expo/vector-icons";
 
 const discovery = {
     authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',

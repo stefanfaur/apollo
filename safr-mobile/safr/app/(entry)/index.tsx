@@ -1,11 +1,43 @@
-import React from 'react';
-import {View, Text, StyleSheet, Image, TouchableOpacity} from 'react-native';
-import {Link, router} from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { Link, router } from 'expo-router';
 import AnimatedGradientBg from "@/components/ui/animated-gradient-bg";
 import ApolloButton from "@/components/ui/apollo-button";
 import globalStyles from "@/constants/global-styles";
+import { getToken } from "@/utils/secureStore";
 
-export default function HomeScreen() {
+export default function EntryScreen() {
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAuthToken = async () => {
+            try {
+                const token = await getToken();
+                if (token) {
+                    // Navigate to home if token exists
+                    router.replace('/(tabs)/home');
+                } else {
+                    setLoading(false); // No token, stay on EntryScreen
+                }
+            } catch (error) {
+                console.error("Error fetching auth token:", error);
+                setLoading(false);
+            }
+        };
+
+        checkAuthToken();
+    }, []);
+
+    if (loading) {
+        return (
+            <AnimatedGradientBg>
+                <View style={globalStyles.container}>
+                    <Text style={styles.loadingText}>Loading...</Text>
+                </View>
+            </AnimatedGradientBg>
+        );
+    }
+
     return (
         <AnimatedGradientBg>
             <View style={globalStyles.container}>
@@ -30,8 +62,6 @@ export default function HomeScreen() {
                 <Text style={styles.registerPrompt}>
                     New user? <Link href="/signup" style={styles.registerText}>Register</Link>
                 </Text>
-
-                {/*<Link href="/(tabs)/home" style={styles.registerText}>home</Link>*/}
             </View>
         </AnimatedGradientBg>
     );
@@ -48,18 +78,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#ffffff',
         marginBottom: 30,
-        // Layered text shadow for glow effect
         textShadowColor: 'rgba(255, 255, 255, 0.7)',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 5,
-        // Additional styling for enhanced visibility
         letterSpacing: 1,
-        // For iOS
         shadowColor: '#fff',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.5,
         shadowRadius: 8,
-        // For Android
         elevation: 5,
     },
     loginButton: {
@@ -75,6 +101,10 @@ const styles = StyleSheet.create({
     registerText: {
         fontSize: 14,
         fontWeight: 'bold',
+        color: '#ffffff',
+    },
+    loadingText: {
+        fontSize: 18,
         color: '#ffffff',
     },
 });
