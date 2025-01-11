@@ -1,64 +1,131 @@
-import React, {useEffect, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import GradientBg from '@/components/ui/gradient-bg';
 import { Ionicons } from '@expo/vector-icons';
 import globalStyles from '@/constants/global-styles';
-import { Colors } from '@/constants/colors';
-import DeviceCard from '@/components/ui/device-card';
 import DropdownListItem from '@/components/ui/dropdown-list-item';
-import {getToken} from "@/utils/secureStore";
+import DeviceCard from '@/components/ui/device-card';
+import { HomeDTO } from "@/models/homeDTO";
+import { createHome, fetchHomes } from "@/services/home-service";
+import { createDeviceInHome } from "@/services/device-service";
+import { Colors } from "@/constants/colors";
+import { useFocusEffect } from '@react-navigation/native';
+import AddDeviceForm from "@/components/forms/add-device-form";
+import CustomModal from "@/components/ui/custom-modal";
+import AddHomeForm from "@/components/forms/add-home-form";
 
 export default function HomeScreen() {
-  const [hasAnyHomes, setHasAnyHomes] = useState(false);
+  const [homes, setHomes] = useState<HomeDTO[]>([]);
+  const [isAddHomeModalVisible, setAddHomeModalVisible] = useState(false);
+  const [isAddDeviceModalVisible, setAddDeviceModalVisible] = useState(false);
+  const [selectedHomeUuid, setSelectedHomeUuid] = useState<string | null>(null);
 
-  const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchToken = async () => {
-      const storedToken = await getToken();
-      console.log("Token is:", storedToken);
-      setToken(storedToken);
-    };
-
-    fetchToken();
+  // fetch homes
+  const loadHomes = useCallback(async () => {
+    try {
+      const fetchedHomes = await fetchHomes();
+      console.log("Fetched homes:", fetchedHomes);
+      setHomes(fetchedHomes);
+    } catch (error) {
+      console.error("Failed to fetch homes:", error);
+    }
   }, []);
+
+  // refetch homes whenever the screen is focused
+  useFocusEffect(
+      useCallback(() => {
+        loadHomes();
+      }, [loadHomes])
+  );
+
+  const handleAddHome = async (name: string, address: string) => {
+    try {
+      await createHome(name, address);
+      setAddHomeModalVisible(false);
+      await loadHomes();
+    } catch (error) {
+      console.error('Failed to add home:', error);
+    }
+  };
+
+  const handleAddDevice = async (name: string, description: string, hardwareId: string) => {
+    if (selectedHomeUuid) {
+      try {
+        await createDeviceInHome(selectedHomeUuid, name, description, hardwareId);
+        setAddDeviceModalVisible(false);
+        await loadHomes();
+      } catch (error) {
+        console.error('Failed to add device:', error);
+      }
+    }
+  };
 
   return (
       <GradientBg theme="dark">
-        {hasAnyHomes ? (
+
+        {/* Add Home Modal */}
+        <CustomModal
+            visible={isAddHomeModalVisible}
+            title="Add Home"
+            onClose={() => setAddHomeModalVisible(false)}
+        >
+          <AddHomeForm onSubmit={handleAddHome} visible={isAddHomeModalVisible}/>
+        </CustomModal>
+
+        {/* Add Device Modal */}
+        <CustomModal
+            visible={isAddDeviceModalVisible}
+            title="Add Device"
+            onClose={() => setAddDeviceModalVisible(false)}
+        >
+          <AddDeviceForm onSubmit={handleAddDevice} visible={isAddDeviceModalVisible} />
+        </CustomModal>
+
+        {homes.length > 0 ? (
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-              <DropdownListItem title="Timisoara Apartment" settingsAction={() => console.log('settings1')} startsOpen={true}>
-                <DeviceCard
-                    imageUri={require('@/assets/images/devices/door-lock.png')}
-                    title="Front Door"
-                    description="Three-Way Auth"
-                    status="warn"
-                />
-              </DropdownListItem>
-              <DropdownListItem title="Dumbravita Apartment" settingsAction={() => console.log('settings2')}>
-                <DeviceCard
-                    imageUri={require('@/assets/images/devices/door-lock.png')}
-                    title="Back Door"
-                    description="Face only Auth"
-                    status="ok"
-                />
-              </DropdownListItem>
+              {homes.map((home) => (
+                  <DropdownListItem
+                      key={home.uuid}
+                      title={home.name}
+                      startsOpen={true}
+                      settingsAction={() => console.log(`Settings for ${home.name}`)}
+                  >
+                    {home.devices.map((device) => (
+                        <DeviceCard
+                            key={device.uuid}
+                            imageUri={require('@/assets/images/devices/door-lock.png')}
+                            title={device.name}
+                            description={device.description}
+                            status="ok"
+                        />
+                    ))}
+                    <TouchableOpacity
+                        style={styles.addDeviceButton}
+                        onPress={() => {
+                          setSelectedHomeUuid(home.uuid);
+                          setAddDeviceModalVisible(true);
+                        }}
+                    >
+                      <Ionicons name="add" size={20} color="#fff" />
+                      <Text style={styles.addDeviceText}>Add Device</Text>
+                    </TouchableOpacity>
+                  </DropdownListItem>
+              ))}
             </ScrollView>
         ) : (
             <View style={globalStyles.container}>
-              {/* Top Image */}
               <Image
                   source={require('@/assets/images/header-images/security-devices.png')}
                   style={styles.image}
               />
-
-              {/* Message */}
               <Text style={styles.message}>No security devices found.</Text>
-
-              {/* Add Device Button */}
-              <TouchableOpacity style={styles.addDeviceButton} onPress={() => setHasAnyHomes(true)}>
+              <TouchableOpacity
+                  style={styles.addDeviceButton}
+                  onPress={() => setAddHomeModalVisible(true)}
+              >
                 <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addDeviceText}>Add Device</Text>
+                <Text style={styles.addDeviceText}>Add Home</Text>
               </TouchableOpacity>
             </View>
         )}
