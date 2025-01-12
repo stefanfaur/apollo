@@ -38,8 +38,8 @@ public class DeviceService {
      * @return
      */
     @Transactional
-    public Device createDeviceInHome(String homeUuid, String name, String description, String hardwareId) {
-        Device device = new Device(name, description, hardwareId);
+    public Device createDeviceInHome(String homeUuid, String name, String deviceType, String description, String hardwareId) {
+        Device device = new Device(name, deviceType, description, hardwareId);
         Home home = homeRepository.findById(homeUuid).orElse(null);
         if (home == null) {
             throw new IllegalArgumentException("Home not found for UUID: " + homeUuid);

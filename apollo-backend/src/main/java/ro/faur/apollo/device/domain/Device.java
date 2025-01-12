@@ -7,13 +7,19 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import ro.faur.apollo.home.domain.Home;
-import ro.faur.apollo.libs.persistence.BaseEntity;
+import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 
 @Entity
 public class Device extends BaseEntity {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    /**
+     * Derived from the hardware id
+     */
+    @Column(name = "device_type")
+    private String deviceType;
 
     @Column(name = "description")
     private String description;
@@ -26,8 +32,9 @@ public class Device extends BaseEntity {
     @JsonIgnore // TODO: remove this after no need when we use DTOs
     private Home home;
 
-    public Device(String name, String description, String hardwareId) {
+    public Device(String name, String deviceType, String description, String hardwareId) {
         this.name = name;
+        this.deviceType = deviceType;
         this.description = description;
         this.hardwareId = hardwareId;
     }

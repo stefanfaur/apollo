@@ -3,7 +3,7 @@ package ro.faur.apollo.home.domain;
 import jakarta.persistence.*;
 import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.libs.auth.user.domain.User;
-import ro.faur.apollo.libs.persistence.BaseEntity;
+import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 
 import java.util.List;
 

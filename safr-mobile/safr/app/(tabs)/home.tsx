@@ -49,10 +49,10 @@ export default function HomeScreen() {
     }
   };
 
-  const handleAddDevice = async (name: string, description: string, hardwareId: string) => {
+  const handleAddDevice = async (name: string, deviceType: string, description: string, hardwareId: string) => {
     if (selectedHomeUuid) {
       try {
-        await createDeviceInHome(selectedHomeUuid, name, description, hardwareId);
+        await createDeviceInHome(selectedHomeUuid, name, deviceType, description, hardwareId);
         setAddDeviceModalVisible(false);
         await loadHomes();
       } catch (error) {

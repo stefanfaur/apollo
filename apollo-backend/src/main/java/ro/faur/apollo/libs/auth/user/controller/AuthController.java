@@ -1,5 +1,6 @@
 package ro.faur.apollo.libs.auth.user.controller;
 
+import io.micrometer.core.annotation.Timed;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,6 +33,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Timed(value = "login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -47,6 +49,7 @@ public class AuthController {
 
     // TODO: extract all this logic into a service
     @PostMapping("/register")
+    @Timed(value = "register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
         try {
             // check if username is already taken
@@ -72,6 +75,7 @@ public class AuthController {
     }
 
     @PostMapping("/oauth2/login/google")
+    @Timed(value = "oauth2Login")
     public ResponseEntity<?> oauth2Login(@RequestParam("token") String googleToken) {
         try {
             String jwt = authService.authenticateWithGoogle(googleToken);

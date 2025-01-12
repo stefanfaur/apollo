@@ -3,12 +3,13 @@ import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
 import ApolloButton from '@/components/ui/apollo-button';
 
 interface AddDeviceFormProps {
-    onSubmit: (name: string, description: string, hardwareId: string) => void;
+    onSubmit: (name: string, deviceType: string, description: string, hardwareId: string) => void;
     visible: boolean;
 }
 
 const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ onSubmit, visible }) => {
     const [name, setName] = useState('');
+    const [deviceType, setDeviceType] = useState('');
     const [description, setDescription] = useState('');
     const [hardwareId, setHardwareId] = useState('');
 
@@ -16,6 +17,7 @@ const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ onSubmit, visible }) => {
     useEffect(() => {
         if (visible) {
             setName('');
+            setDeviceType('');
             setDescription('');
             setHardwareId('');
         }
@@ -26,7 +28,7 @@ const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ onSubmit, visible }) => {
             Alert.alert('Validation Error', 'Please fill in all required fields.');
             return;
         }
-        onSubmit(name.trim(), description.trim(), hardwareId.trim());
+        onSubmit(name.trim(), deviceType.trim(), description.trim(), hardwareId.trim());
     };
 
     return (
@@ -37,8 +39,17 @@ const AddDeviceForm: React.FC<AddDeviceFormProps> = ({ onSubmit, visible }) => {
                 placeholder="Enter device name"
                 value={name}
                 onChangeText={setName}
-                placeholderTextColor="#888" // Consistent placeholder color
+                placeholderTextColor="#888"
             />
+            {/*<Text style={styles.label}>Device Type (auto-filled after pairing)</Text>*/}
+            {/*<TextInput*/}
+            {/*    style={[styles.input, styles.inputDisabled]}*/}
+            {/*    placeholder="Enter device type"*/}
+            {/*    value={name}*/}
+            {/*    onChangeText={setName}*/}
+            {/*    placeholderTextColor="#6c6262"*/}
+            {/*    editable={false}*/}
+            {/*/>*/}
             <Text style={styles.label}>Description (Optional)</Text>
             <TextInput
                 style={styles.input}
@@ -67,12 +78,20 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginBottom: 5,
     },
+    labelDisabled: {
+        fontSize: 14,
+        color: '#6c6262',
+        marginBottom: 5,
+    },
     input: {
         backgroundColor: '#1f2937',
         color: '#fff',
         padding: 10,
         borderRadius: 5,
         marginBottom: 15,
+    },
+    inputDisabled: {
+        backgroundColor: '#141c25',
     },
 });
 

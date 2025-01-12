@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import ro.faur.apollo.libs.auth.user.domain.User;
 import ro.faur.apollo.libs.auth.user.repository.UserRepository;
+import ro.faur.apollo.libs.auth.user.service.UserService;
 
 /**
  * Utility class for access to current user making the request.
@@ -14,9 +15,11 @@ import ro.faur.apollo.libs.auth.user.repository.UserRepository;
 public class UserContext {
 
     private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserContext(UserRepository userRepository) {
+    public UserContext(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public static String getUsername() {
@@ -42,7 +45,7 @@ public class UserContext {
     public User getUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
-            return userRepository.findByUsername(((UserDetails) authentication.getPrincipal()).getUsername()).orElse(null);
+            return userService.getByUsername(((UserDetails) authentication.getPrincipal()).getUsername());
         }
         return null;
     }

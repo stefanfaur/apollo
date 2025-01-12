@@ -27,7 +27,7 @@ public class DeviceController {
     }
 
     @PostMapping("/{homeUuid}")
-    public Device createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String description, @RequestParam String hardwareId) {
-        return deviceService.createDeviceInHome(homeUuid, name, description, hardwareId);
+    public Device createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String deviceType, @RequestParam String description, @RequestParam String hardwareId) {
+        return deviceService.createDeviceInHome(homeUuid, name, deviceType, description, hardwareId);
     }
 }

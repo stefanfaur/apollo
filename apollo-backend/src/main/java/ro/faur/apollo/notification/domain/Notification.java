@@ -2,7 +2,7 @@ package ro.faur.apollo.notification.domain;
 
 import jakarta.persistence.*;
 import ro.faur.apollo.device.domain.Device;
-import ro.faur.apollo.libs.persistence.BaseEntity;
+import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 import ro.faur.apollo.notification.domain.types.NotificationEventType;
 
 @Entity

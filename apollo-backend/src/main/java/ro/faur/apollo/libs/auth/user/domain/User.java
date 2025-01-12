@@ -2,7 +2,7 @@ package ro.faur.apollo.libs.auth.user.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import ro.faur.apollo.libs.persistence.BaseEntity;
+import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 
 
 @Entity(name = "users")

@@ -1,4 +1,4 @@
-package ro.faur.apollo.libs.persistence;
+package ro.faur.apollo.libs.persistence.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
