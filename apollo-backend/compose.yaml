@@ -17,3 +17,13 @@ services:
     volumes:
       - ./db/redis:/data
 
+  mqtt-broker:
+    image: eclipse-mosquitto:latest
+    container_name: mqtt-broker
+    ports:
+      - '1883:1883'
+  #    - '9001:9001' # webSocket listener
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log

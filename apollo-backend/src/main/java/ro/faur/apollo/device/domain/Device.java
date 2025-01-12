@@ -12,11 +12,11 @@ import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 @Entity
 public class Device extends BaseEntity {
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     private String name;
 
     /**
-     * Derived from the hardware id
+     * received from device in hello message
      */
     @Column(name = "device_type")
     private String deviceType;
@@ -24,6 +24,9 @@ public class Device extends BaseEntity {
     @Column(name = "description")
     private String description;
 
+    /**
+     * received from device in hello message
+     */
     @Column(name = "hardware_id", nullable = false)
     private String hardwareId;
 
