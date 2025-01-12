@@ -20,8 +20,7 @@ export default function HomeScreen() {
   const [isAddDeviceModalVisible, setAddDeviceModalVisible] = useState(false);
   const [selectedHomeUuid, setSelectedHomeUuid] = useState<string | null>(null);
 
-
-  // fetch homes
+  // Fetch homes
   const loadHomes = useCallback(async () => {
     try {
       const fetchedHomes = await fetchHomes();
@@ -32,7 +31,7 @@ export default function HomeScreen() {
     }
   }, []);
 
-  // refetch homes whenever the screen is focused
+  // Refetch homes whenever the screen is focused
   useFocusEffect(
       useCallback(() => {
         loadHomes();
@@ -45,7 +44,7 @@ export default function HomeScreen() {
       setAddHomeModalVisible(false);
       await loadHomes();
     } catch (error) {
-      console.error('Failed to add home:', error);
+      console.error("Failed to add home:", error);
     }
   };
 
@@ -56,21 +55,20 @@ export default function HomeScreen() {
         setAddDeviceModalVisible(false);
         await loadHomes();
       } catch (error) {
-        console.error('Failed to add device:', error);
+        console.error("Failed to add device:", error);
       }
     }
   };
 
   return (
       <GradientBg theme="dark">
-
         {/* Add Home Modal */}
         <CustomModal
             visible={isAddHomeModalVisible}
             title="Add Home"
             onClose={() => setAddHomeModalVisible(false)}
         >
-          <AddHomeForm onSubmit={handleAddHome} visible={isAddHomeModalVisible}/>
+          <AddHomeForm onSubmit={handleAddHome} visible={isAddHomeModalVisible} />
         </CustomModal>
 
         {/* Add Device Modal */}
@@ -108,7 +106,6 @@ export default function HomeScreen() {
                         }}
                     >
                       <Ionicons name="add" size={20} color="#fff" />
-                      <Text style={styles.addDeviceText}>Add Device</Text>
                     </TouchableOpacity>
                   </DropdownListItem>
               ))}
@@ -120,15 +117,17 @@ export default function HomeScreen() {
                   style={styles.image}
               />
               <Text style={styles.message}>No security devices found.</Text>
-              <TouchableOpacity
-                  style={styles.addDeviceButton}
-                  onPress={() => setAddHomeModalVisible(true)}
-              >
-                <Ionicons name="add" size={20} color="#fff" />
-                <Text style={styles.addDeviceText}>Add Home</Text>
-              </TouchableOpacity>
             </View>
         )}
+
+        {/* Add Home Button (properly placed) */}
+        <TouchableOpacity
+            style={styles.addHomeButton}
+            onPress={() => setAddHomeModalVisible(true)}
+        >
+          <Ionicons name="add" size={16} color="#fff" />
+          <Text style={styles.addHomeButtonText}>Add Home</Text>
+        </TouchableOpacity>
       </GradientBg>
   );
 }
@@ -149,15 +148,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     marginBottom: 20,
+    textAlign: 'center',
   },
   addDeviceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: 'flex-end',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#1f2937',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    marginTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
@@ -165,12 +165,32 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   addDeviceText: {
-    marginLeft: 10,
+    display: 'none',
+  },
+  addHomeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#1f2937',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  addHomeButtonText: {
+    marginLeft: 8,
     fontSize: 16,
     color: '#fff',
   },
   cardContainer: {
-    width: Dimensions.get('window').width - 20, // Full screen width minus padding
+    width: Dimensions.get('window').width - 20,
     alignSelf: 'center',
     marginBottom: 10,
     borderRadius: 10,
@@ -181,3 +201,4 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
 });
+
