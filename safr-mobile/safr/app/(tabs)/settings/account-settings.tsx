@@ -4,7 +4,7 @@ import GradientBg from '@/components/ui/gradient-bg';
 import ApolloButton from '@/components/ui/apollo-button';
 import { fetchUserInfo, logoutUser } from "@/services/user-service";
 import { router } from "expo-router";
-import {UserDTO} from "@/models/UserDTO";
+import {UserDTO} from "@/models/userDTO";
 
 export default function AccountSettingsScreen() {
   const [user, setUser] = useState<UserDTO | null>(null);
