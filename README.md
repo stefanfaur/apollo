@@ -3,8 +3,10 @@
 - Software app side:
     - Mobile app using React Native and Expo 
     - Backend using Spring Boot
+    - Google Social Login
     - Database PostgreSQL
-    - Docker for backend and database deployment(will do later)
+    - Docker for backend and database deployment(Postgres and Redit)
+      - Also used for MQTT and Prometheus
     - CI/CD using Github Actions(will do later)
 
 - Hardware side:

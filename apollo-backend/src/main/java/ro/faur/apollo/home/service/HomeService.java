@@ -52,8 +52,15 @@ public class HomeService {
         return HomeDTO.from(homes);
     }
 
+    @Transactional
     public HomeDTO getHome(String homeUuid) {
-        return HomeDTO.from(homeRepository.findById(homeUuid).orElse(null));
+        Home home = homeRepository.findById(homeUuid).orElse(null);
+        if (home == null) {
+            throw new IllegalArgumentException("Home not found for UUID: " + homeUuid);
+        }
+        home.getDevices().size(); // force fetch of devices
+
+        return HomeDTO.from(home);
     }
 
 }
