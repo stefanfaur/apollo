@@ -1,55 +1,110 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, TouchableOpacity, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import GradientBg from '@/components/ui/gradient-bg';
 import NotificationCard from '@/components/ui/notification-card';
 import { Colors } from '@/constants/colors';
+import NotificationService from '@/services/notification-service';
+import { Notification } from '@/models/notification';
 
 export default function NotificationsScreen() {
-  const notifications = [
-    {
-      icon: require('@/assets/images/notifications/unauthorized.png'),
-      title: 'Handle Tried',
-      description: 'Unauthorized person tried handle.',
-      time: '9:41 AM',
-    },
-    {
-      icon: require('@/assets/images/notifications/unauthorized.png'),
-      title: 'Door Opened',
-      description: 'Unauthorized person forced door open.',
-      time: '9:41 AM',
-    },
-    {
-      icon: require('@/assets/images/notifications/authorized.png'),
-      title: 'Owner Entry',
-      description: 'Successful three-way authorization.',
-      time: '9:41 AM',
-    },
-    {
-      icon: require('@/assets/images/notifications/suspicious-activity.png'),
-      title: 'Suspicious Activity',
-      description: 'Unknown person lingering around door.',
-      time: '9:41 AM',
-    },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [polling, setPolling] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalImage, setModalImage] = useState<string | null>(null);
+
+  const placeholderIcon = 'https://placehold.co/100x100.jpeg';
+
+  const fetchNotifications = async () => {
+    try {
+      const fetchedNotifications = await NotificationService.getNotificationsForUser();
+      setNotifications(fetchedNotifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTime = (isoTime: string) => {
+    const date = new Date(isoTime);
+    if (isNaN(date.getTime())) {
+      return 'Invalid date';
+    }
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleCardPress = (imageUrl: string | undefined) => {
+    if (imageUrl) {
+      setModalImage(imageUrl);
+      setModalVisible(true);
+    }
+  };
+
+  useFocusEffect(
+      useCallback(() => {
+        setLoading(true);
+        fetchNotifications();
+      }, [])
+  );
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (!polling) {
+        setPolling(true);
+        fetchNotifications().finally(() => setPolling(false));
+      }
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [polling]);
+
+  if (loading) {
+    return (
+        <GradientBg theme="dark">
+          <View style={styles.container}>
+            <ActivityIndicator size="large" color={Colors.dark.text} />
+          </View>
+        </GradientBg>
+    );
+  }
 
   return (
       <GradientBg theme="dark">
         <View style={styles.container}>
-          {/* Header */}
           <Text style={styles.header}>Notifications</Text>
-
-          {/* Notifications List */}
           <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {notifications.map((notification, index) => (
-                <NotificationCard
-                    key={index}
-                    icon={notification.icon}
-                    title={notification.title}
-                    description={notification.description}
-                    time={notification.time}
-                />
-            ))}
+            {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                    <TouchableOpacity
+                        key={notification.uuid}
+                        onPress={() => handleCardPress(notification.imageUrl)}
+                    >
+                      <NotificationCard
+                          icon={placeholderIcon}
+                          title={notification.title}
+                          description={notification.message}
+                          time={formatTime(notification.createdAt)}
+                      />
+                    </TouchableOpacity>
+                ))
+            ) : (
+                <Text style={styles.noNotificationsText}>No notifications available.</Text>
+            )}
           </ScrollView>
+
+          {modalImage && (
+              <Modal visible={modalVisible} transparent animationType="fade">
+                <View style={styles.modalContainer}>
+                  <TouchableOpacity
+                      style={styles.modalBackground}
+                      onPress={() => setModalVisible(false)}
+                  />
+                  <Image source={{ uri: modalImage }} style={styles.fullImage} />
+                </View>
+              </Modal>
+          )}
         </View>
       </GradientBg>
   );
@@ -71,5 +126,28 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingBottom: 20,
+  },
+  noNotificationsText: {
+    fontSize: 16,
+    color: Colors.dark.text,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  },
+  modalBackground: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  fullImage: {
+    width: '90%',
+    height: '70%',
+    resizeMode: 'contain',
+    borderRadius: 10,
   },
 });
