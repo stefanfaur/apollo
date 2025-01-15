@@ -61,6 +61,7 @@ public class MqttService {
             if (device != null && device.getName() != null) { // device is activated when it has a name
                 Notification notification = new Notification(title, notificationMessage);
                 notification.setEmitter(device);
+                notification.setImageUrl("https://placehold.co/300x300.jpeg");
                 notification.setType(NotificationEventType.DOORLOCK_MISC); // TODO: set correct type once devices send them
                 notificationRepository.save(notification);
                 System.out.println("Saved notification for device: " + hardwareId);
