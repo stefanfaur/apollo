@@ -11,6 +11,7 @@ export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [polling, setPolling] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalImage, setModalImage] = useState<string | null>(null);
 
@@ -46,19 +47,23 @@ export default function NotificationsScreen() {
       useCallback(() => {
         setLoading(true);
         fetchNotifications();
+
+        // Start polling when the screen is focused
+        const intervalId = setInterval(() => {
+          if (!polling) {
+            setPolling(true);
+            fetchNotifications().finally(() => setPolling(false));
+          }
+        }, 2000);
+        setPollingInterval(intervalId);
+
+        // Cleanup polling when the screen loses focus
+        return () => {
+          clearInterval(intervalId);
+          setPollingInterval(null);
+        };
       }, [])
   );
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (!polling) {
-        setPolling(true);
-        fetchNotifications().finally(() => setPolling(false));
-      }
-    }, 2000);
-
-    return () => clearInterval(intervalId);
-  }, [polling]);
 
   if (loading) {
     return (
