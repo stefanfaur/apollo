@@ -1,5 +1,6 @@
 package ro.faur.apollo.device.controller;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.faur.apollo.device.domain.dtos.DeviceDTO;
 import ro.faur.apollo.device.service.DeviceService;
@@ -27,7 +28,7 @@ public class DeviceController {
     }
 
     @PostMapping("/{homeUuid}")
-    public DeviceDTO createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String deviceType, @RequestParam String description, @RequestParam String hardwareId) {
+    public ResponseEntity<?> createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String deviceType, @RequestParam String description, @RequestParam String hardwareId) {
         return deviceService.createDeviceInHome(homeUuid, name, deviceType, description, hardwareId);
     }
 }

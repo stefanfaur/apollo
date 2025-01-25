@@ -18,4 +18,16 @@ public interface HomeRepository extends JpaRepository<Home, String> {
     List<Home> findByAdminOrGuest(@Param("uuid") String uuid);
 
     Home findByUuid(String uuid);
+
+    @Query("SELECT CASE WHEN COUNT(h) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM home h " +
+            "JOIN h.admins a " +
+            "WHERE a.uuid = :userUuid AND h.uuid = :homeUuid")
+    boolean isUserAdminOfHome(String userUuid, String homeUuid);
+
+    @Query("SELECT CASE WHEN COUNT(h) > 0 THEN TRUE ELSE FALSE END " +
+            "FROM home h " +
+            "JOIN h.guests g " +
+            "WHERE g.user.uuid = :userUuid AND h.uuid = :homeUuid")
+    boolean isUserGuestOfHome(String userUuid, String homeUuid);
 }

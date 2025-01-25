@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.home.domain.Home;
 import ro.faur.apollo.home.domain.dto.HomeDTO;
+import ro.faur.apollo.home.domain.dto.HomeDtoMapper;
 import ro.faur.apollo.home.repository.HomeRepository;
 import ro.faur.apollo.libs.auth.utils.UserContext;
 
@@ -13,15 +14,18 @@ import java.util.List;
 public class HomeService {
 
     private final HomeRepository homeRepository;
+    private final HomeDtoMapper homeDtoMapper;
     private final UserContext userContext;
 
-    public HomeService(HomeRepository homeRepository, UserContext userContext) {
+    public HomeService(HomeRepository homeRepository, HomeDtoMapper homeDtoMapper, UserContext userContext) {
         this.homeRepository = homeRepository;
+        this.homeDtoMapper = homeDtoMapper;
         this.userContext = userContext;
     }
 
     /**
      * Create an initial home, with the creator as sole admin.
+     *
      * @param name
      * @param address
      */
@@ -31,7 +35,7 @@ public class HomeService {
         home = homeRepository.save(home); // persist home so uuid can get added to admins join table
         home.getAdmins().add(userContext.getUser());
         home = homeRepository.save(home);
-        return HomeDTO.from(home);
+        return homeDtoMapper.toDto(home);
     }
 
     /**
@@ -45,11 +49,11 @@ public class HomeService {
         if (userUuid == null) {
             throw new IllegalStateException("No authenticated user found.");
         }
-        List<Home> homes =  homeRepository.findByAdminOrGuest(userUuid);
+        List<Home> homes = homeRepository.findByAdminOrGuest(userUuid);
 
         homes.forEach(home -> home.getDevices().size()); // force fetch of devices
 
-        return HomeDTO.from(homes);
+        return homeDtoMapper.toDto(homes);
     }
 
     @Transactional
@@ -60,7 +64,7 @@ public class HomeService {
         }
         home.getDevices().size(); // force fetch of devices
 
-        return HomeDTO.from(home);
+        return homeDtoMapper.toDto(home);
     }
 
 }

@@ -1,6 +1,8 @@
 package ro.faur.apollo.device.service;
 
 import jakarta.transaction.Transactional;
+import org.apache.coyote.Response;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.device.domain.dtos.DeviceDTO;
@@ -10,6 +12,7 @@ import ro.faur.apollo.home.domain.Home;
 import ro.faur.apollo.home.repository.HomeRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class DeviceService {
@@ -40,27 +43,31 @@ public class DeviceService {
     }
 
     /**
-     * Create a device in a home.
-     * This method will be removed in the future, as devices will be created by the device itself
-     * via initial mqtt message, and only will be linked to a home later.
+     * <p>Link a device to a home.</p>
+     * <p>The device itself already exists in the database once it is turned on and connected to the internet.</p>
      * @param homeUuid
      * @param name
      * @param hardwareId
-     * @return
+     * @return DeviceDTO if successful, else a bad request response.
      */
     @Transactional
-    public DeviceDTO createDeviceInHome(String homeUuid, String name, String deviceType, String description, String hardwareId) {
-        Device device = new Device(name, deviceType, description, hardwareId);
+    public ResponseEntity createDeviceInHome(String homeUuid, String name, String deviceType, String description, String hardwareId) {
         Home home = homeRepository.findById(homeUuid).orElse(null);
         if (home == null) {
             throw new IllegalArgumentException("Home not found for UUID: " + homeUuid);
         }
+
+        Device device = deviceRepository.findByHardwareId(hardwareId);
+        if (device == null) {
+            return ResponseEntity.badRequest().body("Device not found for hardwareId '" + hardwareId + "' , please turn on the device and connect it to the internet.");
+        }
+
         device.setHome(home);
         device = deviceRepository.save(device);
         home.getDevices().add(device);
         homeRepository.save(home);
 
-        return deviceDtoMapper.toDto(device);
+        return ResponseEntity.ok(deviceDtoMapper.toDto(device));
     }
 
 }
