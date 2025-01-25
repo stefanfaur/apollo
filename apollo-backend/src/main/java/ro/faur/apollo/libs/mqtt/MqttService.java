@@ -1,6 +1,7 @@
 package ro.faur.apollo.libs.mqtt;
 
 import org.eclipse.paho.client.mqttv3.*;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.device.repository.DeviceRepository;
@@ -19,7 +20,7 @@ public class MqttService {
         this.deviceRepository = deviceRepository;
         this.notificationRepository = notificationRepository;
 
-        mqttClient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
+        mqttClient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId(), new MemoryPersistence());
         mqttClient.connect();
         subscribeToTopics();
     }
