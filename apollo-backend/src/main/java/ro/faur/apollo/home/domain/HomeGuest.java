@@ -1,7 +1,7 @@
 package ro.faur.apollo.home.domain;
 
 import jakarta.persistence.*;
-import ro.faur.apollo.device.domain.Device;
+import ro.faur.apollo.device.domain.GuestDeviceRights;
 import ro.faur.apollo.libs.auth.user.domain.User;
 import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 
@@ -17,25 +17,28 @@ public class HomeGuest extends BaseEntity {
     @ManyToOne
     private User user;
 
-    @ManyToMany
-    @JoinTable(
-            name = "home_guest_permitted_devices",
-            joinColumns = @JoinColumn(name = "home_guest_id"),
-            inverseJoinColumns = @JoinColumn(name = "device_id")
-    )
-    private List<Device> permittedDevices;
+    @OneToMany(mappedBy = "homeGuest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GuestDeviceRights> deviceRights;
 
     @ManyToOne
     @JoinColumn(name = "home_uuid")
     private Home home;
 
-    public HomeGuest(User user, List<Device> permittedDevices, Home home) {
+    public HomeGuest() {
+    }
+
+    public HomeGuest(User user, List<GuestDeviceRights> deviceRights, Home home) {
         this.user = user;
-        this.permittedDevices = permittedDevices;
+        this.deviceRights = deviceRights;
         this.home = home;
     }
 
-    public HomeGuest() {
+    public List<GuestDeviceRights> getDeviceRights() {
+        return deviceRights;
+    }
+
+    public void setDeviceRights(List<GuestDeviceRights> deviceRights) {
+        this.deviceRights = deviceRights;
     }
 
     public Home getHome() {
@@ -52,13 +55,5 @@ public class HomeGuest extends BaseEntity {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public List<Device> getPermittedDevices() {
-        return permittedDevices;
-    }
-
-    public void setPermittedDevices(List<Device> permittedDevices) {
-        this.permittedDevices = permittedDevices;
     }
 }
