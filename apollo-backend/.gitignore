@@ -36,6 +36,7 @@ build/
 ### secrets ###
 application.yaml
 
+### services persistent data
+./prometheus/data
 ./db
-
 ./mosquitto
