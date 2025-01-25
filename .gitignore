@@ -3,7 +3,6 @@
 paho*
 apollo-backend/db/*
 apollo-backend/prometheus/data/*
-apollo-backend/mosquitto/config/*
 apollo-backend/mosquitto/data/*
 apollo-backend/mosquitto/log/*
 apollo-backend/mosquitto/venv/*
