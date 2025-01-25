@@ -79,7 +79,7 @@ export default function LoginScreen(): JSX.Element {
                 let idToken = tokenResponse.idToken ? tokenResponse.idToken : '';
                 let apolloJwt = await AuthService.oauth2Login(idToken);
                 await saveToken(apolloJwt.token);
-                Alert.alert('Google login Successful', `Welcome back!`);
+                console.log('OAuth2 Login Successful');
                 navigation.reset({
                     index: 0,
                     // @ts-ignore TODO: fix this when properly defining the routes
