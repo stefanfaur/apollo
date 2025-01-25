@@ -1,8 +1,8 @@
-import {Device} from "@/models/device";
+import {DeviceDTO} from "@/models/deviceDTO";
 
 export interface HomeDTO {
     uuid: string;
     name: string;
     address: string;
-    devices: Device[];
+    devices: DeviceDTO[];
 }

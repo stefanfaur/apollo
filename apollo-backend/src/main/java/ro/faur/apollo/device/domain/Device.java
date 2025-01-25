@@ -2,10 +2,7 @@ package ro.faur.apollo.device.domain;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import ro.faur.apollo.home.domain.Home;
 import ro.faur.apollo.libs.persistence.domain.BaseEntity;
 
@@ -35,11 +32,23 @@ public class Device extends BaseEntity {
     @JsonIgnore // TODO: remove this after no need when we use DTOs
     private Home home;
 
+    @Enumerated(EnumType.STRING)
+    private DeviceStatus status = DeviceStatus.UNKNOWN;
+
     public Device(String name, String deviceType, String description, String hardwareId) {
         this.name = name;
         this.deviceType = deviceType;
         this.description = description;
         this.hardwareId = hardwareId;
+    }
+
+    public Device(String name, String deviceType, String description, String hardwareId, Home home, DeviceStatus status) {
+        this.name = name;
+        this.deviceType = deviceType;
+        this.description = description;
+        this.hardwareId = hardwareId;
+        this.home = home;
+        this.status = status;
     }
 
     public Device() {
@@ -75,5 +84,21 @@ public class Device extends BaseEntity {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(String deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public DeviceStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DeviceStatus status) {
+        this.status = status;
     }
 }

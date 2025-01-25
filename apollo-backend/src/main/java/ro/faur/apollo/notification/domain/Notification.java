@@ -1,6 +1,5 @@
 package ro.faur.apollo.notification.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.libs.persistence.domain.BaseEntity;
@@ -36,6 +35,14 @@ public class Notification extends BaseEntity {
     }
 
     public Notification() {
+    }
+
+    public Notification(String title, String message, NotificationEventType type, String imageUrl, Device emitter) {
+        this.title = title;
+        this.message = message;
+        this.type = type;
+        this.imageUrl = imageUrl;
+        this.emitter = emitter;
     }
 
     public String getTitle() {

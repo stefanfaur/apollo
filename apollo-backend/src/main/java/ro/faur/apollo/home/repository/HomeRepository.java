@@ -16,4 +16,6 @@ public interface HomeRepository extends JpaRepository<Home, String> {
             "LEFT JOIN h.guests g " +
             "WHERE a.uuid = :uuid OR g.user.uuid = :uuid")
     List<Home> findByAdminOrGuest(@Param("uuid") String uuid);
+
+    Home findByUuid(String uuid);
 }

@@ -3,6 +3,8 @@ package ro.faur.apollo.device.service;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.device.domain.Device;
+import ro.faur.apollo.device.domain.dtos.DeviceDTO;
+import ro.faur.apollo.device.domain.dtos.DeviceDtoMapper;
 import ro.faur.apollo.device.repository.DeviceRepository;
 import ro.faur.apollo.home.domain.Home;
 import ro.faur.apollo.home.repository.HomeRepository;
@@ -14,18 +16,27 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final HomeRepository homeRepository;
+    private final DeviceDtoMapper deviceDtoMapper;
 
-    public DeviceService(DeviceRepository deviceRepository, HomeRepository homeRepository) {
+    public DeviceService(DeviceRepository deviceRepository, HomeRepository homeRepository, DeviceDtoMapper deviceDtoMapper) {
         this.deviceRepository = deviceRepository;
         this.homeRepository = homeRepository;
+        this.deviceDtoMapper = deviceDtoMapper;
     }
 
-    public List<Device> getAllDevices() {
-        return deviceRepository.findAll();
+    public List<DeviceDTO> getAllDevices() {
+        return deviceRepository.findAll()
+                .stream()
+                .map(deviceDtoMapper::toDto)
+                .toList();
     }
 
-    public Device getDevice(String deviceUuid) {
-        return deviceRepository.findById(deviceUuid).orElse(null);
+    public DeviceDTO getDevice(String deviceUuid) {
+        Device device = deviceRepository.findById(deviceUuid).orElse(null);
+        if (device == null) {
+            throw new IllegalArgumentException("Device not found for UUID: " + deviceUuid);
+        }
+        return deviceDtoMapper.toDto(device);
     }
 
     /**
@@ -38,7 +49,7 @@ public class DeviceService {
      * @return
      */
     @Transactional
-    public Device createDeviceInHome(String homeUuid, String name, String deviceType, String description, String hardwareId) {
+    public DeviceDTO createDeviceInHome(String homeUuid, String name, String deviceType, String description, String hardwareId) {
         Device device = new Device(name, deviceType, description, hardwareId);
         Home home = homeRepository.findById(homeUuid).orElse(null);
         if (home == null) {
@@ -48,7 +59,8 @@ public class DeviceService {
         device = deviceRepository.save(device);
         home.getDevices().add(device);
         homeRepository.save(home);
-        return device;
+
+        return deviceDtoMapper.toDto(device);
     }
 
 }

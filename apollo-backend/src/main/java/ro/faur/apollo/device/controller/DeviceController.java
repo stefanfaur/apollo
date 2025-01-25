@@ -1,7 +1,7 @@
 package ro.faur.apollo.device.controller;
 
 import org.springframework.web.bind.annotation.*;
-import ro.faur.apollo.device.domain.Device;
+import ro.faur.apollo.device.domain.dtos.DeviceDTO;
 import ro.faur.apollo.device.service.DeviceService;
 
 import java.util.List;
@@ -17,17 +17,17 @@ public class DeviceController {
     }
 
     @GetMapping
-    public List<Device> getAllDevices() {
+    public List<DeviceDTO> getAllDevices() {
         return deviceService.getAllDevices();
     }
 
     @GetMapping("/{deviceUuid}")
-    public Device getDevice(@PathVariable String deviceUuid) {
+    public DeviceDTO getDevice(@PathVariable String deviceUuid) {
         return deviceService.getDevice(deviceUuid);
     }
 
     @PostMapping("/{homeUuid}")
-    public Device createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String deviceType, @RequestParam String description, @RequestParam String hardwareId) {
+    public DeviceDTO createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String deviceType, @RequestParam String description, @RequestParam String hardwareId) {
         return deviceService.createDeviceInHome(homeUuid, name, deviceType, description, hardwareId);
     }
 }

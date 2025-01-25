@@ -1,11 +1,11 @@
-import {Device} from "@/models/device";
+import {DeviceDTO} from "@/models/deviceDTO";
 
-export interface Notification {
+export interface NotificationDTO {
     uuid: string;
     title: string;
     message: string;
     type: string;
     imageUrl?: string;
     createdAt: string;
-    emitter: Device;
+    emitter: DeviceDTO;
 }

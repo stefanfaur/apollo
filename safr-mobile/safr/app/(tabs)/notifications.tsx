@@ -5,10 +5,10 @@ import GradientBg from '@/components/ui/gradient-bg';
 import NotificationCard from '@/components/ui/notification-card';
 import { Colors } from '@/constants/colors';
 import NotificationService from '@/services/notification-service';
-import { Notification } from '@/models/notification';
+import { NotificationDTO } from '@/models/notificationDTO';
 
 export default function NotificationsScreen() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [polling, setPolling] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);

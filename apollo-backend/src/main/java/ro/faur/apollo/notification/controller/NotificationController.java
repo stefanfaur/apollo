@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ro.faur.apollo.notification.domain.Notification;
+import ro.faur.apollo.notification.domain.dtos.NotificationDTO;
 import ro.faur.apollo.notification.service.NotificationService;
 
 import java.util.List;
@@ -26,8 +27,8 @@ public class NotificationController {
      * @return a list of notifications.
      */
     @GetMapping("/device/{deviceUuid}")
-    public ResponseEntity<List<Notification>> getNotificationsForDevice(@PathVariable String deviceUuid) {
-        List<Notification> notifications = notificationService.getNotificationsForDevice(deviceUuid);
+    public ResponseEntity<List<NotificationDTO>> getNotificationsForDevice(@PathVariable String deviceUuid) {
+        List<NotificationDTO> notifications = notificationService.getNotificationsForDevice(deviceUuid);
         return ResponseEntity.ok(notifications);
     }
 
@@ -37,8 +38,8 @@ public class NotificationController {
      * @return a list of notifications.
      */
     @GetMapping("/user")
-    public ResponseEntity<List<Notification>> getNotificationsForUser() {
-        List<Notification> notifications = notificationService.getNotificationsForUser();
+    public ResponseEntity<List<NotificationDTO>> getNotificationsForUser() {
+        List<NotificationDTO> notifications = notificationService.getNotificationsForUser();
         return ResponseEntity.ok(notifications);
     }
 
