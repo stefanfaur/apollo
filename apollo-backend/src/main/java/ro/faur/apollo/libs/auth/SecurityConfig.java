@@ -51,7 +51,6 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(auth -> auth.baseUri("/oauth2/authorization"))
                         .successHandler((request, response, authentication) -> {
-                            // On success, generate JWT for the social login user
                             CustomOAuth2User principal = new CustomOAuth2User((OAuth2User) authentication.getPrincipal());
                             String token = jwtTokenProvider.generateToken(principal.getEmail());
                             response.setContentType("application/json");
@@ -63,12 +62,16 @@ public class SecurityConfig {
                         .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpServletResponse.SC_OK))
                 )
                 .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint(unauthorizedEntryPoint()) // Set custom entry point
+                        .authenticationEntryPoint(unauthorizedEntryPoint()) // Handles authentication-related errors
+                        .accessDeniedHandler((request, response, accessDeniedException) -> { // Handles access-related errors
+                            response.setContentType("application/json");
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN); // Return 403 for access denied
+                            response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"You do not have permission to access this resource.\"}");
+                        })
                 );
 
         return http.build();
     }
-
 
     @Bean
     public AuthenticationEntryPoint unauthorizedEntryPoint() {
@@ -92,3 +95,4 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 }
+

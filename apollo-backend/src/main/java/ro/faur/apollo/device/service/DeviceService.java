@@ -103,6 +103,8 @@ public class DeviceService {
         }
 
         device.setHome(home);
+        device.setName(name);
+        device.setDescription(description);
         device = deviceRepository.save(device);
         home.getDevices().add(device);
         homeRepository.save(home);

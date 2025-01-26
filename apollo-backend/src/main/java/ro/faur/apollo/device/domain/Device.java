@@ -24,7 +24,7 @@ public class Device extends BaseEntity {
     /**
      * received from device in hello message
      */
-    @Column(name = "hardware_id", nullable = false)
+    @Column(name = "hardware_id", nullable = false, unique = true)
     private String hardwareId;
 
     @ManyToOne

@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
 import CustomModal from './custom-modal';
 import ApolloButton from './apollo-button';
 import { Colors } from '@/constants/colors';
+import apiClient from "@/utils/apiClient";
+import {deviceService} from "@/services/device-service";
 
 interface Device {
   uuid: string;
@@ -47,11 +49,7 @@ const EditGuestDeviceModal: React.FC<EditGuestDeviceModalProps> = ({
 
   const fetchDevices = async () => {
     try {
-      const response = await fetch(`/api/home/${homeId}/devices`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch devices');
-      }
-      const data = await response.json();
+      const data = await deviceService.getHomeDevices(homeId);
       setDevices(data);
     } catch (err) {
       setError('Failed to load devices');
@@ -75,19 +73,19 @@ const EditGuestDeviceModal: React.FC<EditGuestDeviceModalProps> = ({
     setSelectedRights(prev => {
       const newRights = new Map(prev);
       const deviceRights = new Set(prev.get(deviceId) || []);
-      
+
       if (deviceRights.has(right)) {
         deviceRights.delete(right);
       } else {
         deviceRights.add(right);
       }
-      
+
       if (deviceRights.size > 0) {
         newRights.set(deviceId, deviceRights);
       } else {
         newRights.delete(deviceId);
       }
-      
+
       return newRights;
     });
   };
@@ -117,7 +115,7 @@ const EditGuestDeviceModal: React.FC<EditGuestDeviceModalProps> = ({
     <CustomModal visible={visible} title="Edit Device Permissions" onClose={onClose}>
       <ScrollView style={styles.container}>
         {error && <Text style={styles.errorText}>{error}</Text>}
-        
+
         {devices.map(device => (
           <View key={device.uuid} style={styles.deviceSection}>
             <Text style={styles.deviceName}>{device.name}</Text>
@@ -126,16 +124,16 @@ const EditGuestDeviceModal: React.FC<EditGuestDeviceModalProps> = ({
               return (
                 <View key={right} style={styles.rightItem}>
                   <Text style={styles.rightLabel}>
-                    {right.split('_').map(word => 
+                    {right.split('_').map(word =>
                       word.charAt(0) + word.slice(1).toLowerCase()
                     ).join(' ')}
                   </Text>
                   <Switch
                     value={isEnabled}
                     onValueChange={() => toggleRight(device.uuid, right)}
-                    trackColor={{ 
+                    trackColor={{
                       false: Colors.dark.buttonBackground,
-                      true: Colors.dark.primary 
+                      true: Colors.dark.primary
                     }}
                   />
                 </View>

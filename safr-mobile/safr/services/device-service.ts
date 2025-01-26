@@ -16,6 +16,7 @@ export const deviceService = {
     description: string,
     hardwareId: string
   ): Promise<Device> => {
+    console.log('Creating device in home:', homeId, name, description, hardwareId);
     try {
       const response = await apiClient.post(`/home/${homeId}/devices`, {
         name,

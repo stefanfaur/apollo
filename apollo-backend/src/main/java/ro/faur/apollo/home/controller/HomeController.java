@@ -1,9 +1,13 @@
 package ro.faur.apollo.home.controller;
 
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ro.faur.apollo.device.domain.dtos.CreateDeviceRequestDTO;
 import ro.faur.apollo.device.domain.dtos.DeviceDTO;
+import ro.faur.apollo.device.service.DeviceService;
 import ro.faur.apollo.home.domain.dto.*;
 import ro.faur.apollo.home.service.HomeAccessService;
 import ro.faur.apollo.home.service.HomeService;
@@ -14,12 +18,15 @@ import java.util.List;
 @RequestMapping("/api/home")
 public class HomeController {
 
+    private static final Logger log = LoggerFactory.getLogger(HomeController.class);
     private final HomeService homeService;
     private final HomeAccessService homeAccessService;
+    private final DeviceService deviceService;
 
-    public HomeController(HomeService homeService, HomeAccessService homeAccessService) {
+    public HomeController(HomeService homeService, HomeAccessService homeAccessService, DeviceService deviceService) {
         this.homeService = homeService;
         this.homeAccessService = homeAccessService;
+        this.deviceService = deviceService;
     }
 
     @PostMapping()
@@ -96,6 +103,7 @@ public class HomeController {
             homeAccessService.addHomeGuest(homeUuid, request);
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
+            log.error("Failed to add guest to home", e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -133,4 +141,15 @@ public class HomeController {
         }
     }
 
+    @PostMapping("/{homeUuid}/devices")
+    public ResponseEntity<?> addDeviceToHome(
+            @PathVariable String homeUuid,
+            @RequestBody CreateDeviceRequestDTO request) {
+        return deviceService.createDeviceInHome(
+                homeUuid,
+                request.getName(),
+                request.getDeviceType(),
+                request.getDescription(),
+                request.getHardwareId());
+    }
 }

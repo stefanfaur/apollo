@@ -103,26 +103,38 @@ public class HomeAccessService {
         if (home.getAdmins().contains(user)) {
             throw new IllegalArgumentException("User is already an admin of this home");
         }
-
         if (home.getGuests().stream().anyMatch(guest -> guest.getUser().equals(user))) {
             throw new IllegalArgumentException("User is already a guest of this home");
         }
 
+        final HomeGuest guest = new HomeGuest();
+        guest.setUser(user);
+        guest.setHome(home);
+        home.getGuests().add(guest);
+
+        // Create device rights list before saving to ensure all devices exist
         List<GuestDeviceRights> deviceRights = request.getDeviceRights().stream()
                 .map(rightDto -> {
                     Device device = deviceRepository.findById(rightDto.getDeviceId())
                             .orElseThrow(() -> new IllegalArgumentException("Device not found: " + rightDto.getDeviceId()));
-                    
-                    return new GuestDeviceRights(null, device, rightDto.getRights());
+
+                    // Verify the device belongs to this home
+                    if (!device.getHome().equals(home)) {
+                        throw new IllegalArgumentException("Device " + rightDto.getDeviceId() + " does not belong to this home");
+                    }
+
+                    return new GuestDeviceRights(guest, device, rightDto.getRights());
                 })
                 .collect(Collectors.toList());
 
-        HomeGuest guest = new HomeGuest(user, deviceRights, home);
-        deviceRights.forEach(right -> right.setHomeGuest(guest));
-        
-        home.getGuests().add(guest);
+        // Set device rights before saving to ensure they're created in the same transaction
+        guest.setDeviceRights(deviceRights);
+
+        // Save everything in one transaction
+        homeGuestRepository.save(guest);
         homeRepository.save(home);
     }
+
 
     @Transactional
     public void removeHomeGuest(String homeUuid, String guestUuid) {
@@ -158,7 +170,7 @@ public class HomeAccessService {
                 .map(rightDto -> {
                     Device device = deviceRepository.findById(rightDto.getDeviceId())
                             .orElseThrow(() -> new IllegalArgumentException("Device not found: " + rightDto.getDeviceId()));
-                    
+
                     return new GuestDeviceRights(guest, device, rightDto.getRights());
                 })
                 .collect(Collectors.toList());

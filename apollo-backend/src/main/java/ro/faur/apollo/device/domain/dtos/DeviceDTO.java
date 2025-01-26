@@ -1,6 +1,5 @@
 package ro.faur.apollo.device.domain.dtos;
 
-import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.device.domain.DeviceStatus;
 
 public class DeviceDTO {
