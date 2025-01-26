@@ -7,7 +7,7 @@ import DropdownListItem from '@/components/ui/dropdown-list-item';
 import DeviceCard from '@/components/ui/device-card';
 import { HomeDTO } from "@/models/homeDTO";
 import { createHome, fetchHomes } from "@/services/home-service";
-import { createDeviceInHome } from "@/services/device-service";
+import { deviceService } from "@/services/device-service";
 import { Colors } from "@/constants/colors";
 import { useFocusEffect } from '@react-navigation/native';
 import AddDeviceForm from "@/components/forms/add-device-form";
@@ -53,7 +53,7 @@ export default function HomeScreen() {
   const handleAddDevice = async (name: string, deviceType: string, description: string, hardwareId: string) => {
     if (selectedHomeUuid) {
       try {
-        await createDeviceInHome(selectedHomeUuid, name, deviceType, description, hardwareId);
+        await deviceService.createDeviceInHome(selectedHomeUuid, name, deviceType, description, hardwareId);
         setAddDeviceModalVisible(false);
         await loadHomes();
       } catch (error) {
