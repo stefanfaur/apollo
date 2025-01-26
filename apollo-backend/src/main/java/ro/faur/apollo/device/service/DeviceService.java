@@ -110,4 +110,10 @@ public class DeviceService {
         return ResponseEntity.ok(deviceDtoMapper.toDto(device));
     }
 
+    public List<DeviceDTO> getDevicesForHome(Home home) {
+        return home.getDevices()
+                .stream()
+                .map(deviceDtoMapper::toDto)
+                .toList();
+    }
 }

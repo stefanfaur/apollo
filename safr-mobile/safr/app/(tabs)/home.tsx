@@ -13,11 +13,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import AddDeviceForm from "@/components/forms/add-device-form";
 import CustomModal from "@/components/ui/custom-modal";
 import AddHomeForm from "@/components/forms/add-home-form";
+import HomeSettingsModal from "@/components/ui/home-settings-modal";
 
 export default function HomeScreen() {
   const [homes, setHomes] = useState<HomeDTO[]>([]);
   const [isAddHomeModalVisible, setAddHomeModalVisible] = useState(false);
   const [isAddDeviceModalVisible, setAddDeviceModalVisible] = useState(false);
+  const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
   const [selectedHomeUuid, setSelectedHomeUuid] = useState<string | null>(null);
 
   // Fetch homes
@@ -60,6 +62,11 @@ export default function HomeScreen() {
     }
   };
 
+  const handleOpenSettings = (homeUuid: string) => {
+    setSelectedHomeUuid(homeUuid);
+    setSettingsModalVisible(true);
+  };
+
   return (
       <GradientBg theme="dark">
         {/* Add Home Modal */}
@@ -80,6 +87,18 @@ export default function HomeScreen() {
           <AddDeviceForm onSubmit={handleAddDevice} visible={isAddDeviceModalVisible} />
         </CustomModal>
 
+        {/* Home Settings Modal */}
+        {selectedHomeUuid && (
+          <HomeSettingsModal
+              visible={isSettingsModalVisible}
+              onClose={() => {
+                setSettingsModalVisible(false);
+                setSelectedHomeUuid(null);
+              }}
+              homeId={selectedHomeUuid}
+          />
+        )}
+
         {homes.length > 0 ? (
             <ScrollView contentContainerStyle={styles.scrollContainer}>
               {homes.map((home) => (
@@ -87,7 +106,7 @@ export default function HomeScreen() {
                       key={home.uuid}
                       title={home.name}
                       startsOpen={true}
-                      settingsAction={() => console.log(`Settings for ${home.name}`)}
+                      settingsAction={() => handleOpenSettings(home.uuid)}
                   >
                     {home.devices.map((device) => (
                         <DeviceCard
@@ -201,4 +220,3 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
 });
-

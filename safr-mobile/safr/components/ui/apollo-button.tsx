@@ -13,17 +13,19 @@ interface ApolloButtonProps {
     title: string;
     onPress: () => void;
     style?: StyleProp<ViewStyle>;
-    theme?: 'light' | 'dark';
+    variant?: 'primary' | 'secondary';
     disabled?: boolean;
 }
 
 export default function ApolloButton({
-                                         title,
-                                         onPress,
-                                         style,
-                                         theme = 'dark',
-                                         disabled = false
-                                     }: ApolloButtonProps) {
+    title,
+    onPress,
+    style,
+    variant = 'primary',
+    disabled = false
+}: ApolloButtonProps) {
+    const theme = variant === 'secondary' ? 'light' : 'dark';
+
     return (
         <Pressable
             style={({ pressed }) => [

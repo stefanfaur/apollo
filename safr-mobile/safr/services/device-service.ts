@@ -1,13 +1,52 @@
-import apiClient from "@/utils/apiClient";
-import {DeviceDTO} from "@/models/deviceDTO";
+import apiClient from '../utils/apiClient';
 
-export const createDeviceInHome = async (homeUuid: string, name: string, deviceType: string, description: string, hardwareId: string): Promise<DeviceDTO> => {
-    const params = new URLSearchParams({ name, deviceType, description, hardwareId }).toString();
-    const response = await apiClient.post(`/devices/${homeUuid}?${params}`);
-    return response.data;
-};
-
-export const fetchDevicesInHome = async (homeUuid: string): Promise<DeviceDTO[]> => {
-    const response = await apiClient.get(`/devices/${homeUuid}`);
-    return response.data;
+export interface Device {
+  uuid: string;
+  name: string;
+  description: string;
+  deviceType: string;
+  hardwareId: string;
 }
+
+export const deviceService = {
+  createDeviceInHome: async (
+    homeId: string,
+    name: string,
+    deviceType: string,
+    description: string,
+    hardwareId: string
+  ): Promise<Device> => {
+    try {
+      const response = await apiClient.post(`/home/${homeId}/devices`, {
+        name,
+        deviceType,
+        description,
+        hardwareId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Failed to create device:', error);
+      throw error;
+    }
+  },
+
+  getHomeDevices: async (homeId: string): Promise<Device[]> => {
+    try {
+      const response = await apiClient.get(`/home/${homeId}/devices`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch home devices:', error);
+      throw error;
+    }
+  },
+
+  getDevice: async (deviceId: string): Promise<Device> => {
+    try {
+      const response = await apiClient.get(`/devices/${deviceId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch device:', error);
+      throw error;
+    }
+  },
+};

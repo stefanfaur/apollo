@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import GradientBg from '@/components/ui/gradient-bg';
 import ApolloButton from '@/components/ui/apollo-button';
-import { fetchUserInfo, logoutUser } from "@/services/user-service";
+import { userService } from "@/services/user-service";
 import { router } from "expo-router";
 import {UserDTO} from "@/models/userDTO";
 
@@ -13,7 +13,7 @@ export default function AccountSettingsScreen() {
   useEffect(() => {
     const loadUserInfo = async () => {
       try {
-        const userInfo = await fetchUserInfo();
+        const userInfo = await userService.fetchUserInfo();
         setUser(userInfo);
       } catch (error) {
         console.error("Failed to fetch user info:", error);
@@ -28,7 +28,7 @@ export default function AccountSettingsScreen() {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await userService.logoutUser();
       Alert.alert("Logout Successful", "You have been logged out.");
       router.replace("/(entry)"); // Redirect to entry screen
     } catch (error) {

@@ -2,6 +2,7 @@ package ro.faur.apollo.home.service;
 
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import ro.faur.apollo.device.domain.dtos.DeviceDTO;
 import ro.faur.apollo.device.service.DeviceService;
 import ro.faur.apollo.home.domain.Home;
 import ro.faur.apollo.home.domain.dto.HomeDTO;
@@ -88,6 +89,15 @@ public class HomeService {
         home.getDevices().size(); // force fetch of devices
 
         return homeDtoMapper.toDto(home);
+    }
+
+    @Transactional
+    public List<DeviceDTO> getHomeDevices(String homeUuid) {
+        Home home = homeRepository.findById(homeUuid).orElse(null);
+        if (home == null) {
+            throw new IllegalArgumentException("Home not found for UUID: " + homeUuid);
+        }
+        return deviceService.getDevicesForHome(home);
     }
 
 }

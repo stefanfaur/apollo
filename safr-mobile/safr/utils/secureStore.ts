@@ -5,6 +5,7 @@ const SecureStoreKeys = {
 };
 
 export const saveToken = async (token: string): Promise<void> => {
+    console.log('saving token', token);
     await SecureStore.setItemAsync(SecureStoreKeys.AUTH_TOKEN, token);
 };
 

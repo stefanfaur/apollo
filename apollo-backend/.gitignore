@@ -40,3 +40,5 @@ application.yaml
 ./prometheus/data
 ./db
 ./mosquitto
+./loadtest/__pycache__
+./loadtest/venv/*
