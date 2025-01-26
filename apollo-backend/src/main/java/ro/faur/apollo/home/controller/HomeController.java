@@ -34,4 +34,14 @@ public class HomeController {
         return ResponseEntity.ok(home);
     }
 
+    @DeleteMapping("/{homeUuid}")
+    public ResponseEntity<?> deleteHome(@PathVariable String homeUuid) {
+        try {
+            homeService.deleteHome(homeUuid);
+            return ResponseEntity.ok(true);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

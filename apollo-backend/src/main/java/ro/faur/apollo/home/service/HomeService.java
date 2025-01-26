@@ -2,10 +2,12 @@ package ro.faur.apollo.home.service;
 
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import ro.faur.apollo.device.service.DeviceService;
 import ro.faur.apollo.home.domain.Home;
 import ro.faur.apollo.home.domain.dto.HomeDTO;
 import ro.faur.apollo.home.domain.dto.HomeDtoMapper;
 import ro.faur.apollo.home.repository.HomeRepository;
+import ro.faur.apollo.libs.auth.user.domain.User;
 import ro.faur.apollo.libs.auth.utils.UserContext;
 
 import java.util.List;
@@ -14,11 +16,13 @@ import java.util.List;
 public class HomeService {
 
     private final HomeRepository homeRepository;
+    private final DeviceService deviceService;
     private final HomeDtoMapper homeDtoMapper;
     private final UserContext userContext;
 
-    public HomeService(HomeRepository homeRepository, HomeDtoMapper homeDtoMapper, UserContext userContext) {
+    public HomeService(HomeRepository homeRepository, DeviceService deviceService, HomeDtoMapper homeDtoMapper, UserContext userContext) {
         this.homeRepository = homeRepository;
+        this.deviceService = deviceService;
         this.homeDtoMapper = homeDtoMapper;
         this.userContext = userContext;
     }
@@ -36,6 +40,25 @@ public class HomeService {
         home.getAdmins().add(userContext.getUser());
         home = homeRepository.save(home);
         return homeDtoMapper.toDto(home);
+    }
+
+    /**
+     * Delete a home and unlink all devices linked to it.
+     * @param homeUuid
+     */
+    @Transactional
+    public boolean deleteHome(String homeUuid) {
+        User user = userContext.getUser();
+        if (!homeRepository.isUserAdminOfHome(user.getUuid(), homeUuid)) {
+            throw new IllegalArgumentException("User is not an admin of the home.");
+        }
+        Home home = homeRepository.findById(homeUuid).orElse(null);
+        if (home == null) {
+            throw new IllegalArgumentException("Home not found for UUID: " + homeUuid);
+        }
+        deviceService.unlinkDevicesFromHome(home);
+        homeRepository.delete(home);
+        return true;
     }
 
     /**

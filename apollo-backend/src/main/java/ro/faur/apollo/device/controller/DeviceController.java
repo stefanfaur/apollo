@@ -27,6 +27,15 @@ public class DeviceController {
         return deviceService.getDevice(deviceUuid);
     }
 
+    @PostMapping("/unlink/{deviceUuid}")
+    public ResponseEntity<?> unlinkDeviceFromHome(@PathVariable String deviceUuid) {
+        if (deviceService.unlinkDeviceFromHome(deviceUuid)) {
+            return ResponseEntity.ok(true);
+        } else {
+            return ResponseEntity.badRequest().body("Device not found for UUID: " + deviceUuid);
+        }
+    }
+
     @PostMapping("/{homeUuid}")
     public ResponseEntity<?> createDeviceInHome(@PathVariable String homeUuid, @RequestParam String name, @RequestParam String deviceType, @RequestParam String description, @RequestParam String hardwareId) {
         return deviceService.createDeviceInHome(homeUuid, name, deviceType, description, hardwareId);

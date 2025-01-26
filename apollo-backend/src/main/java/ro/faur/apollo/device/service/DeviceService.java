@@ -43,6 +43,46 @@ public class DeviceService {
     }
 
     /**
+     * <p>Unlink all devices that belonged to a home.</p>
+     * <p>Devices are not deleted, only their home reference is removed.</p>
+     * <p>Usually done when deleting a home.</p>
+     * @param home
+     * @return
+     */
+    @Transactional
+    public boolean unlinkDevicesFromHome(Home home) {
+
+        List<Device> devices = home.getDevices();
+        for (Device device : devices) {
+            device.setHome(null);
+            deviceRepository.save(device);
+        }
+
+        home.getDevices().clear();
+        homeRepository.save(home);
+
+        return true;
+    }
+
+    /**
+     * <p>Unlink a device from a home.</p>
+     * <p>Device is not deleted, only its home reference is removed.</p>
+     * @param deviceUuid
+     * @return
+     */
+    public boolean unlinkDeviceFromHome(String deviceUuid) {
+        Device device = deviceRepository.findById(deviceUuid).orElse(null);
+        if (device == null) {
+            throw new IllegalArgumentException("Device not found for UUID: " + deviceUuid);
+        }
+        device.setHome(null);
+        device.getHome().getDevices().remove(device);
+        deviceRepository.save(device);
+        homeRepository.save(device.getHome());
+        return true;
+    }
+
+    /**
      * <p>Link a device to a home.</p>
      * <p>The device itself already exists in the database once it is turned on and connected to the internet.</p>
      * @param homeUuid
