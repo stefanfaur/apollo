@@ -54,7 +54,6 @@ export default function EntryScreen() {
                 <ApolloButton
                     title="Login"
                     onPress={() => router.push('/login')}
-                    theme="dark"
                     style={styles.loginButton}
                 />
 

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import ApolloButton from './apollo-button';
-import AddGuestModal from './add-guest-modal';
-import EditGuestDeviceModal from './edit-guest-device-modal';
 import { homeAccessService, GuestDTO } from '@/services/home-access-service';
 
 interface GuestSectionProps {
@@ -24,8 +23,7 @@ interface GuestWithDevices extends Omit<GuestDTO, 'devices'> {
 const GuestSection: React.FC<GuestSectionProps> = ({ homeId }) => {
   const [guests, setGuests] = useState<GuestWithDevices[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [showAddGuest, setShowAddGuest] = useState(false);
-  const [selectedGuest, setSelectedGuest] = useState<GuestWithDevices | null>(null);
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [removingGuestId, setRemovingGuestId] = useState<string | null>(null);
 
@@ -56,28 +54,6 @@ const GuestSection: React.FC<GuestSectionProps> = ({ homeId }) => {
     loadGuests();
   }, [homeId]);
 
-  const handleAddGuest = async (email: string, deviceRights: { deviceId: string, rights: Set<string> }[]) => {
-    try {
-      await homeAccessService.addHomeGuest(homeId, email, deviceRights);
-      await loadGuests();
-      setShowAddGuest(false);
-    } catch (err) {
-      throw err;
-    }
-  };
-
-  const handleUpdateGuestRights = async (deviceRights: { deviceId: string, rights: Set<string> }[]) => {
-    if (!selectedGuest) return;
-
-    try {
-      await homeAccessService.updateGuestDeviceRights(homeId, selectedGuest.uuid, deviceRights);
-      await loadGuests();
-      setSelectedGuest(null);
-    } catch (err) {
-      setError('Failed to update guest permissions');
-      console.error(err);
-    }
-  };
 
   const handleRemoveGuest = async (guestId: string) => {
     try {
@@ -118,7 +94,7 @@ const GuestSection: React.FC<GuestSectionProps> = ({ homeId }) => {
         <Text style={styles.guestEmail}>{item.email}</Text>
         <View style={styles.guestActions}>
           <TouchableOpacity 
-            onPress={() => setSelectedGuest(item)}
+            onPress={() => router.push(`/(home)/${homeId}/guests/edit/${item.uuid}`)}
             style={styles.actionButton}
           >
             <Ionicons name="settings-outline" size={20} color={Colors.dark.text} />
@@ -153,7 +129,7 @@ const GuestSection: React.FC<GuestSectionProps> = ({ homeId }) => {
       <View style={styles.header}>
         <View style={styles.spacer} />
         <TouchableOpacity 
-          onPress={() => setShowAddGuest(true)}
+          onPress={() => router.push(`/(home)/${homeId}/guests/add`)}
           style={styles.addButton}
         >
           <Ionicons name="add-circle" size={24} color={Colors.dark.text} />
@@ -177,23 +153,6 @@ const GuestSection: React.FC<GuestSectionProps> = ({ homeId }) => {
         <Text style={styles.errorText}>{error}</Text>
       )}
 
-      <AddGuestModal
-        visible={showAddGuest}
-        onClose={() => setShowAddGuest(false)}
-        onSubmit={handleAddGuest}
-        homeId={homeId}
-      />
-
-      {selectedGuest && (
-        <EditGuestDeviceModal
-          visible={true}
-          onClose={() => setSelectedGuest(null)}
-          onSubmit={handleUpdateGuestRights}
-          homeId={homeId}
-          guestId={selectedGuest.uuid}
-          currentDevices={selectedGuest.devices}
-        />
-      )}
     </View>
   );
 };

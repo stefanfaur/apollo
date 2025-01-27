@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import CustomModal from './custom-modal';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
 import AdminSection from './admin-section';
 import GuestSection from './guest-section';
 
 type Tab = 'admins' | 'guests';
 
-interface HomeSettingsModalProps {
-  visible: boolean;
-  onClose: () => void;
+interface HomeSettingsProps {
   homeId: string;
 }
 
-const HomeSettingsModal: React.FC<HomeSettingsModalProps> = ({
-  visible,
-  onClose,
+const HomeSettings: React.FC<HomeSettingsProps> = ({
   homeId,
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>('admins');
@@ -30,8 +25,8 @@ const HomeSettingsModal: React.FC<HomeSettingsModalProps> = ({
   };
 
   return (
-    <CustomModal visible={visible} title="Home Settings" onClose={onClose}>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <View style={styles.content}>
         <View style={styles.tabs}>
           <TouchableOpacity 
             style={[
@@ -58,18 +53,21 @@ const HomeSettingsModal: React.FC<HomeSettingsModalProps> = ({
             ]}>Guests</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.content}>
+        <View style={styles.tabContent}>
           {renderTabContent()}
         </View>
       </View>
-    </CustomModal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: Dimensions.get('window').height * 0.7,
-    width: '100%',
+    flex: 1,
+    backgroundColor: Colors.dark.background,
+  },
+  content: {
+    flex: 1,
   },
   tabs: {
     flexDirection: 'row',
@@ -77,7 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: Colors.dark.buttonBackground,
     padding: 4,
-    marginHorizontal: 4,
+    marginHorizontal: 16,
   },
   tab: {
     flex: 1,
@@ -97,12 +95,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     opacity: 1,
   },
-  content: {
+  tabContent: {
     flex: 1,
     backgroundColor: Colors.dark.background,
     borderRadius: 8,
-    marginHorizontal: 4,
   },
 });
 
-export default HomeSettingsModal;
+export default HomeSettings;

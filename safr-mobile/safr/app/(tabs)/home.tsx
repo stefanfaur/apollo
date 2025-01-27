@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { useRouter } from 'expo-router';
 import GradientBg from '@/components/ui/gradient-bg';
 import { Ionicons } from '@expo/vector-icons';
 import globalStyles from '@/constants/global-styles';
@@ -13,13 +14,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import AddDeviceForm from "@/components/forms/add-device-form";
 import CustomModal from "@/components/ui/custom-modal";
 import AddHomeForm from "@/components/forms/add-home-form";
-import HomeSettingsModal from "@/components/ui/home-settings-modal";
 
 export default function HomeScreen() {
   const [homes, setHomes] = useState<HomeDTO[]>([]);
   const [isAddHomeModalVisible, setAddHomeModalVisible] = useState(false);
   const [isAddDeviceModalVisible, setAddDeviceModalVisible] = useState(false);
-  const [isSettingsModalVisible, setSettingsModalVisible] = useState(false);
+  const router = useRouter();
   const [selectedHomeUuid, setSelectedHomeUuid] = useState<string | null>(null);
 
   // Fetch homes
@@ -63,8 +63,10 @@ export default function HomeScreen() {
   };
 
   const handleOpenSettings = (homeUuid: string) => {
-    setSelectedHomeUuid(homeUuid);
-    setSettingsModalVisible(true);
+    router.push({ 
+      pathname: "/(home)/[id]/settings",
+      params: { id: homeUuid }
+    });
   };
 
   return (
@@ -87,17 +89,6 @@ export default function HomeScreen() {
           <AddDeviceForm onSubmit={handleAddDevice} visible={isAddDeviceModalVisible} />
         </CustomModal>
 
-        {/* Home Settings Modal */}
-        {selectedHomeUuid && (
-          <HomeSettingsModal
-              visible={isSettingsModalVisible}
-              onClose={() => {
-                setSettingsModalVisible(false);
-                setSelectedHomeUuid(null);
-              }}
-              homeId={selectedHomeUuid}
-          />
-        )}
 
         {homes.length > 0 ? (
             <ScrollView contentContainerStyle={styles.scrollContainer}>

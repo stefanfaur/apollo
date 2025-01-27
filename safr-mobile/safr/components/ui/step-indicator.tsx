@@ -19,78 +19,82 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({
   }) || (`${(currentStep / (steps.length - 1)) * 100}%` as const);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.stepsContainer}>
-        {steps.map((step, index) => (
-          <View 
-            key={step} 
-            style={[
-              styles.stepContainer,
-              index === steps.length - 1 && styles.lastStepContainer
-            ]}
-          >
-            <View style={[
-              styles.circle,
-              index <= currentStep && styles.activeCircle
-            ]}>
-              <Text style={[
-                styles.stepNumber,
-                index <= currentStep && styles.activeStepNumber
+    <View style={styles.outerContainer}>
+      <View style={styles.container}>
+        <View style={styles.stepsContainer}>
+          {steps.map((step, index) => (
+            <View 
+              key={step} 
+              style={[
+                styles.stepContainer,
+                index === steps.length - 1 && { marginRight: 0 }
+              ]}
+            >
+              <View style={[
+                styles.circle,
+                index <= currentStep && styles.activeCircle
               ]}>
-                {index + 1}
+                <Text style={[
+                  styles.stepNumber,
+                  index <= currentStep && styles.activeStepNumber
+                ]}>
+                  {index + 1}
+                </Text>
+              </View>
+              <Text style={[
+                styles.stepText,
+                index <= currentStep && styles.activeStepText
+              ]}>
+                {step}
               </Text>
             </View>
-            <Text style={[
-              styles.stepText,
-              index <= currentStep && styles.activeStepText
-            ]}>
-              {step}
-            </Text>
-          </View>
-        ))}
-      </View>
-      
-      <View style={styles.progressBarContainer}>
-        <Animated.View 
-          style={[
-            styles.progressBar,
-            { width: progressWidth }
-          ]} 
-        />
+          ))}
+        </View>
+        
+        <View style={styles.progressBarContainer}>
+          <Animated.View 
+            style={[
+              styles.progressBar,
+              { width: progressWidth }
+            ]} 
+          />
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 24,
+  },
   container: {
-    paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     backgroundColor: Colors.dark.background + '40',
     borderRadius: 16,
-    marginBottom: 16,
   },
   stepsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 20,
   },
   stepContainer: {
-    flex: 1,
     alignItems: 'center',
-  },
-  lastStepContainer: {
-    flex: 0,
+    marginRight: 40,
+    width: 100,
   },
   circle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.dark.buttonBackground,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     borderWidth: 2,
     borderColor: Colors.dark.background,
     shadowColor: "#000",
@@ -108,19 +112,18 @@ const styles = StyleSheet.create({
   },
   stepNumber: {
     color: Colors.dark.text,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   activeStepNumber: {
     color: Colors.dark.background,
-    fontSize: 18,
+    fontSize: 16,
   },
   stepText: {
     color: Colors.dark.text,
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
     opacity: 0.7,
-    paddingHorizontal: 8,
   },
   activeStepText: {
     opacity: 1,
@@ -128,12 +131,10 @@ const styles = StyleSheet.create({
     color: Colors.dark.primary,
   },
   progressBarContainer: {
-    height: 4,
+    height: 3,
     backgroundColor: Colors.dark.buttonBackground,
-    borderRadius: 2,
+    borderRadius: 1.5,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.dark.background,
   },
   progressBar: {
     position: 'absolute',
@@ -141,7 +142,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     backgroundColor: Colors.dark.primary,
-    borderRadius: 2,
+    borderRadius: 1.5,
     shadowColor: Colors.dark.primary,
     shadowOffset: {
       width: 0,

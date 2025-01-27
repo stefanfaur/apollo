@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Device } from '@/services/device-service';
@@ -21,35 +21,36 @@ const DevicePermissionsCard: React.FC<DevicePermissionsCardProps> = ({
       <View style={styles.header}>
         <Ionicons 
           name={device.deviceType === 'DOOR_LOCK' ? 'lock-closed' : 'videocam'} 
-          size={24} 
+          size={20} 
           color={Colors.dark.text} 
           style={styles.deviceIcon}
         />
         <Text style={styles.deviceName}>{device.name}</Text>
       </View>
       
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.rightsContainer}
-      >
+      <View style={styles.rightsContainer}>
         {DEVICE_RIGHTS.map(right => {
           const isEnabled = selectedRights.has(right.id);
           return (
             <View key={right.id} style={styles.rightItem}>
-              <View style={styles.rightIconContainer}>
-                <Ionicons 
-                  name={right.icon} 
-                  size={24} 
-                  color={isEnabled ? Colors.dark.primary : Colors.dark.text}
-                />
+              <View style={styles.rightItemLeft}>
+                <View style={[
+                  styles.rightIconContainer,
+                  isEnabled && styles.rightIconContainerEnabled
+                ]}>
+                  <Ionicons 
+                    name={right.icon} 
+                    size={16} 
+                    color={isEnabled ? Colors.dark.primary : Colors.dark.text}
+                  />
+                </View>
+                <Text style={[
+                  styles.rightLabel,
+                  isEnabled && styles.rightLabelEnabled
+                ]}>
+                  {right.label}
+                </Text>
               </View>
-              <Text style={[
-                styles.rightLabel,
-                isEnabled && styles.rightLabelEnabled
-              ]}>
-                {right.label}
-              </Text>
               <Switch
                 value={isEnabled}
                 onValueChange={() => onToggleRight(right.id)}
@@ -62,7 +63,7 @@ const DevicePermissionsCard: React.FC<DevicePermissionsCardProps> = ({
             </View>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 };
@@ -70,73 +71,70 @@ const DevicePermissionsCard: React.FC<DevicePermissionsCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: Colors.dark.buttonBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.dark.primary + '20',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    backgroundColor: Colors.dark.background + '40',
-    padding: 12,
-    borderRadius: 12,
+    marginBottom: 16,
   },
   deviceIcon: {
-    marginRight: 12,
+    marginRight: 8,
     backgroundColor: Colors.dark.primary + '20',
-    padding: 8,
-    borderRadius: 10,
+    padding: 6,
+    borderRadius: 8,
   },
   deviceName: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
     color: Colors.dark.text,
     letterSpacing: 0.5,
   },
   rightsContainer: {
-    paddingRight: 16,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   rightItem: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 24,
-    width: 100,
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: Colors.dark.background,
+    borderRadius: 8,
+    minWidth: '45%',
+    flex: 1,
+  },
+  rightItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   rightIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: Colors.dark.background,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.dark.buttonBackground,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 3.84,
-    elevation: 3,
-    borderWidth: 2,
+    marginRight: 8,
+    borderWidth: 1,
     borderColor: Colors.dark.buttonBackground,
+  },
+  rightIconContainerEnabled: {
+    borderColor: Colors.dark.primary,
+    backgroundColor: Colors.dark.primary + '20',
   },
   rightLabel: {
     color: Colors.dark.text,
-    fontSize: 13,
-    textAlign: 'center',
-    marginBottom: 10,
+    fontSize: 12,
     opacity: 0.8,
+    flex: 1,
   },
   rightLabelEnabled: {
     color: Colors.dark.primary,
@@ -144,7 +142,8 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   switch: {
-    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
+    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
+    marginLeft: 8,
   },
 });
 

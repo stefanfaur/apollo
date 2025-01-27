@@ -1,5 +1,4 @@
 import { Stack } from "expo-router";
-import {Platform} from "react-native";
 
 export default function HomeLayout() {
     return (
@@ -28,13 +27,15 @@ export default function HomeLayout() {
             <Stack.Screen
                 name="login"
                 options={{
-                    title: "Login"
+                    title: "Login",
+                    headerShown: false
                 }}
             />
             <Stack.Screen
                 name="signup"
                 options={{
-                    title: "Sign Up"
+                    title: "Sign Up",
+                    headerShown: false
                 }}
             />
         </Stack>
