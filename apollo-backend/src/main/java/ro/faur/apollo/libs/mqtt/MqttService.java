@@ -1,7 +1,6 @@
 package ro.faur.apollo.libs.mqtt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.minio.errors.*;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
@@ -26,6 +25,8 @@ public class MqttService {
     private final DeviceRepository deviceRepository;
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
+
+    private String linkPrefix = "http://localhost:9000/apollo-bucket/";
 
     public MqttService(DeviceRepository deviceRepository,
                        NotificationRepository notificationRepository,
@@ -98,7 +99,7 @@ public class MqttService {
 
             // Use the provided mediaUrl if available; otherwise, use a default
             if (notifMsg.getMediaUrl() != null && !notifMsg.getMediaUrl().isEmpty()) {
-                notification.setMediaUrl(notifMsg.getMediaUrl());
+                notification.setMediaUrl(linkPrefix + notifMsg.getMediaUrl());
             } else {
                 notification.setMediaUrl("https://placehold.co/300x300.jpeg");
             }
