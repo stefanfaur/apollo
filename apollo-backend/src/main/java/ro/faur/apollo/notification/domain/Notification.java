@@ -17,8 +17,8 @@ public class Notification extends BaseEntity {
     @Enumerated(value = EnumType.STRING)
     private NotificationEventType type;
 
-    @Column(name = "image_url")
-    private String imageUrl;
+    @Column(name = "media_url")
+    private String mediaUrl;
 
 
     /**
@@ -37,11 +37,11 @@ public class Notification extends BaseEntity {
     public Notification() {
     }
 
-    public Notification(String title, String message, NotificationEventType type, String imageUrl, Device emitter) {
+    public Notification(String title, String message, NotificationEventType type, String mediaUrl, Device emitter) {
         this.title = title;
         this.message = message;
         this.type = type;
-        this.imageUrl = imageUrl;
+        this.mediaUrl = mediaUrl;
         this.emitter = emitter;
     }
 
@@ -69,12 +69,12 @@ public class Notification extends BaseEntity {
         this.type = type;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getMediaUrl() {
+        return mediaUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setMediaUrl(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
     }
 
     public Device getEmitter() {

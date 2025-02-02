@@ -19,7 +19,7 @@ public class NotificationDtoMapper {
                 notification.getTitle(),
                 notification.getMessage(),
                 notification.getType(),
-                notification.getImageUrl(),
+                notification.getMediaUrl(),
                 notification.getCreatedAt(),
                 deviceDtoMapper.toDto(notification.getEmitter())
         );
@@ -30,7 +30,7 @@ public class NotificationDtoMapper {
                 notificationDTO.getTitle(),
                 notificationDTO.getMessage(),
                 notificationDTO.getType(),
-                notificationDTO.getImageUrl(),
+                notificationDTO.getMediaUrl(),
                 deviceDtoMapper.toEntity(notificationDTO.getEmitter())
         );
     }

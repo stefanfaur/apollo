@@ -10,16 +10,16 @@ public class NotificationDTO {
     private String title;
     private String message;
     private NotificationEventType type;
-    private String imageUrl;
+    private String mediaUrl;
     private LocalDateTime createdAt;
     private DeviceDTO emitter;
 
-    public NotificationDTO(String uuid, String title, String message, NotificationEventType type, String imageUrl, LocalDateTime createdAt, DeviceDTO emitter) {
+    public NotificationDTO(String uuid, String title, String message, NotificationEventType type, String mediaUrl, LocalDateTime createdAt, DeviceDTO emitter) {
         this.uuid = uuid;
         this.title = title;
         this.message = message;
         this.type = type;
-        this.imageUrl = imageUrl;
+        this.mediaUrl = mediaUrl;
         this.createdAt = createdAt;
         this.emitter = emitter;
     }
@@ -56,12 +56,12 @@ public class NotificationDTO {
         this.type = type;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getMediaUrl() {
+        return mediaUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
+    public void setMediaUrl(String mediaUrl) {
+        this.mediaUrl = mediaUrl;
     }
 
     public LocalDateTime getCreatedAt() {
