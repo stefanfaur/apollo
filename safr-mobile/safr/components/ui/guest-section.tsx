@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
-import ApolloButton from './apollo-button';
+import { useFocusEffect } from '@react-navigation/native';
 import { homeAccessService, GuestDTO } from '@/services/home-access-service';
 
 interface GuestSectionProps {
@@ -50,10 +50,11 @@ const GuestSection: React.FC<GuestSectionProps> = ({ homeId }) => {
     }
   };
 
-  useEffect(() => {
-    loadGuests();
-  }, [homeId]);
-
+  useFocusEffect(
+      useCallback(() => {
+        loadGuests();
+      }, [homeId])
+  );
 
   const handleRemoveGuest = async (guestId: string) => {
     try {
