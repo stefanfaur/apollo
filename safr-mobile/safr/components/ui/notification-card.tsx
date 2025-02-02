@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, Modal, TouchableOpacity } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { Ionicons } from '@expo/vector-icons';
 
 type NotificationCardProps = {
-    icon: string;
     title: string;
     description: string;
     time: string;
     imageUrl?: string;
 };
 
-const NotificationCard: React.FC<NotificationCardProps> = ({ icon, title, description, time, imageUrl }) => {
+const NotificationCard: React.FC<NotificationCardProps> = ({title, description, time, imageUrl }) => {
     const [modalVisible, setModalVisible] = useState(false);
     return (
         <View style={styles.card}>
-            <Image source={{ uri: icon }} style={styles.icon} />
+            <Ionicons name={'notifications'} size={40} color={Colors.dark.icon} style={styles.icon} />
             <View style={styles.content}>
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.description}>{description}</Text>

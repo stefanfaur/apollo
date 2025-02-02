@@ -5,7 +5,7 @@ export interface NotificationDTO {
     title: string;
     message: string;
     type: string;
-    imageUrl?: string;
+    mediaUrl?: string;
     createdAt: string;
     emitter: DeviceDTO;
 }

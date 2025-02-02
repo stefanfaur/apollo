@@ -1,11 +1,12 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Modal, TouchableOpacity, Image } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import React, {useCallback, useState} from 'react';
+import {ActivityIndicator, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import GradientBg from '@/components/ui/gradient-bg';
 import NotificationCard from '@/components/ui/notification-card';
-import { Colors } from '@/constants/colors';
+import {Colors} from '@/constants/colors';
 import NotificationService from '@/services/notification-service';
-import { NotificationDTO } from '@/models/notificationDTO';
+import {NotificationDTO} from '@/models/notificationDTO';
+import {ResizeMode, Video} from "expo-av";
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<NotificationDTO[]>([]);
@@ -13,9 +14,8 @@ export default function NotificationsScreen() {
   const [polling, setPolling] = useState(false);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalImage, setModalImage] = useState<string | null>(null);
-
-  const placeholderIcon = 'https://placehold.co/100x100.jpeg';
+  const [modalMedia, setModalMedia] = useState<string | null>(null);
+  const [isVideo, setIsVideo] = useState(false);
 
   const fetchNotifications = async () => {
     try {
@@ -36,9 +36,10 @@ export default function NotificationsScreen() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleCardPress = (imageUrl: string | undefined) => {
-    if (imageUrl) {
-      setModalImage(imageUrl);
+  const handleCardPress = (mediaUrl: string | undefined) => {
+    if (mediaUrl) {
+      setIsVideo(mediaUrl.endsWith('.mp4') || mediaUrl.endsWith('.mov'));
+      setModalMedia(mediaUrl);
       setModalVisible(true);
     }
   };
@@ -48,7 +49,6 @@ export default function NotificationsScreen() {
         setLoading(true);
         fetchNotifications();
 
-        // Start polling when the screen is focused
         const intervalId = setInterval(() => {
           if (!polling) {
             setPolling(true);
@@ -57,7 +57,6 @@ export default function NotificationsScreen() {
         }, 2000);
         setPollingInterval(intervalId);
 
-        // Cleanup polling when the screen loses focus
         return () => {
           clearInterval(intervalId);
           setPollingInterval(null);
@@ -84,10 +83,9 @@ export default function NotificationsScreen() {
                 notifications.map((notification) => (
                     <TouchableOpacity
                         key={notification.uuid}
-                        onPress={() => handleCardPress(notification.imageUrl)}
+                        onPress={() => handleCardPress(notification.mediaUrl)}
                     >
                       <NotificationCard
-                          icon={placeholderIcon}
                           title={notification.title}
                           description={notification.message}
                           time={formatTime(notification.createdAt)}
@@ -99,14 +97,24 @@ export default function NotificationsScreen() {
             )}
           </ScrollView>
 
-          {modalImage && (
+          {modalMedia && (
               <Modal visible={modalVisible} transparent animationType="fade">
                 <View style={styles.modalContainer}>
                   <TouchableOpacity
                       style={styles.modalBackground}
                       onPress={() => setModalVisible(false)}
                   />
-                  <Image source={{ uri: modalImage }} style={styles.fullImage} />
+                  {isVideo ? (
+                      <Video
+                          source={{ uri: modalMedia }}
+                          style={styles.fullMedia}
+                          useNativeControls
+                          resizeMode={ResizeMode.CONTAIN}
+                          shouldPlay
+                      />
+                  ) : (
+                      <Image source={{ uri: modalMedia }} style={styles.fullMedia} />
+                  )}
                 </View>
               </Modal>
           )}
@@ -149,7 +157,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  fullImage: {
+  fullMedia: {
     width: '90%',
     height: '70%',
     resizeMode: 'contain',
