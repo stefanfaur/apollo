@@ -2,6 +2,7 @@ package ro.faur.apollo.notification.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.libs.auth.utils.UserContext;
 import ro.faur.apollo.notification.domain.Notification;
@@ -41,7 +42,7 @@ public class NotificationService {
      */
     public List<NotificationDTO> getNotificationsForUser() {
         String userUuid = userContext.getUser().getUuid();
-        List<Notification> notif = notificationRepository.findByUserUuid(userUuid);
+        List<Notification> notif = notificationRepository.findByUserUuid(userUuid, Sort.by(Sort.Direction.DESC, "createdAt"));
         if (notif == null) {
             logger.warn("No notifications found for user with UUID {}", userUuid);
         }

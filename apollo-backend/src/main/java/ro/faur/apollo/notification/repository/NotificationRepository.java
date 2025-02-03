@@ -1,5 +1,6 @@
 package ro.faur.apollo.notification.repository;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
         LEFT JOIN h.guests g 
         WHERE a.uuid = :userUuid OR g.user.uuid = :userUuid
     """)
-    List<Notification> findByUserUuid(@Param("userUuid") String userUuid);
+    List<Notification> findByUserUuid(@Param("userUuid") String userUuid, Sort sort);
 
 }

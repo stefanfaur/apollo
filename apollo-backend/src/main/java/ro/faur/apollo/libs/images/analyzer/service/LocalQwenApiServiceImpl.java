@@ -1,9 +1,9 @@
-package ro.faur.apollo.libs.images.analyzer;
+package ro.faur.apollo.libs.images.analyzer.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -14,15 +14,16 @@ import ro.faur.apollo.libs.images.analyzer.dtos.QwenRequest;
 import ro.faur.apollo.libs.images.analyzer.dtos.QwenResponse;
 
 @Service
-public class QwenApiService {
+@ConditionalOnProperty(name = "qwen.service", havingValue = "local")
+public class LocalQwenApiServiceImpl implements QwenApiService {
 
-    private static final Logger logger = LoggerFactory.getLogger(QwenApiService.class);
+    private static final Logger logger = LoggerFactory.getLogger(LocalQwenApiServiceImpl.class);
     private static final String API_URL = "http://localhost:1234/v1/chat/completions";
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    public QwenApiService(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public LocalQwenApiServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
@@ -44,7 +45,6 @@ public class QwenApiService {
             );
 
             if (response.getBody() != null) {
-                logger.info("Received Qwen API Response: {}", objectMapper.writeValueAsString(response.getBody()));
                 return response.getBody().getMessageContent();
             } else {
                 return "No description available";

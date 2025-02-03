@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.device.repository.DeviceRepository;
 import ro.faur.apollo.libs.images.analyzer.ImageProcessorService;
-import ro.faur.apollo.libs.images.analyzer.QwenApiService;
+import ro.faur.apollo.libs.images.analyzer.service.QwenApiService;
 import ro.faur.apollo.libs.mqtt.dto.HelloMessage;
 import ro.faur.apollo.libs.mqtt.dto.NotificationMessage;
 import ro.faur.apollo.notification.domain.Notification;
@@ -79,8 +79,6 @@ public class MqttService {
                     device.setDeviceType(helloMsg.getDeviceType());
                     deviceRepository.save(device);
                     logger.info("Registered new device with hardwareId: {}", helloMsg.getHardwareId());
-                } else {
-                    logger.info("Device already registered: {}", helloMsg.getHardwareId());
                 }
             } catch (Exception e) {
                 logger.error("Error processing hello message", e);
@@ -94,7 +92,7 @@ public class MqttService {
                 String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
                 NotificationMessage notifMsg = objectMapper.readValue(payload, NotificationMessage.class);
 
-                if (notifMsg.getHardwareId() == null || notifMsg.getMediaUrl() == null) {
+                if (notifMsg.getHardwareId() == null) {
                     logger.warn("Invalid notification message: missing required fields. Payload: {}", payload);
                     return;
                 }
@@ -107,15 +105,19 @@ public class MqttService {
 
                 String notificationMessage = notifMsg.getMessage();
 
-                if (imageProcessorService.isImage(linkPrefix + notifMsg.getMediaUrl())) {
-                    String base64Image = imageProcessorService.downloadAndConvertToBase64(linkPrefix + notifMsg.getMediaUrl());
-                    notificationMessage = qwenApiService.getDescriptionFromImage(base64Image);
+                if (notifMsg.getMediaUrl() != null) {
+                    if (imageProcessorService.isImage(linkPrefix + notifMsg.getMediaUrl())) {
+                        String base64Image = imageProcessorService.downloadAndConvertToBase64(linkPrefix + notifMsg.getMediaUrl());
+                        notificationMessage = qwenApiService.getDescriptionFromImage(base64Image);
+                    }
                 }
 
                 Notification notification = new Notification();
                 notification.setTitle(notifMsg.getTitle());
                 notification.setMessage(notificationMessage);
-                notification.setMediaUrl(linkPrefix + notifMsg.getMediaUrl());
+                if (notifMsg.getMediaUrl() != null) {
+                    notification.setMediaUrl(linkPrefix + notifMsg.getMediaUrl());
+                }
                 notification.setType(NotificationEventType.DOORLOCK_MISC);
                 notification.setEmitter(device);
                 notificationRepository.save(notification);

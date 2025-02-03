@@ -22,7 +22,7 @@ public class QwenRequest {
         this.maxTokens = 512;
         this.stream = false;
         this.messages = List.of(
-                new Message("user", List.of(new Content("text", "Analyze the image."),
+                new Message("user", List.of(new Content("text", "What's in this image?"),
                         new Content("image_url", "data:image/jpeg;base64," + base64Image)))
         );
     }
