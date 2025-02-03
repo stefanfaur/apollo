@@ -22,7 +22,8 @@ import java.util.List;
 public class OpenrouterQwenApiServiceImpl implements QwenApiService {
 
     private static final Logger logger = LoggerFactory.getLogger(OpenrouterQwenApiServiceImpl.class);
-    private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
+//    private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
+    private static final String API_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions";
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
@@ -39,7 +40,8 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
     public String getDescriptionFromImage(String base64Image) {
         try {
             QwenRequest request = new QwenRequest(base64Image);
-            request.setModel("qwen/qwen-2-vl-72b-instruct"); // Override model for OpenRouter
+//            request.setModel("qwen/qwen-2-vl-72b-instruct"); // Override model for OpenRouter
+            request.setModel("qwen-vl-max");
             addSystemPromptToRequest(request);
 
             HttpHeaders headers = new HttpHeaders();
@@ -47,6 +49,7 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
             headers.set("Authorization", "Bearer " + openRouterApiKey);
 
             String requestJson = objectMapper.writeValueAsString(request);
+            logger.info("Sending request to OpenRouter.");
 
             HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
             ResponseEntity<QwenResponse> response = restTemplate.exchange(
@@ -57,6 +60,7 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
             );
 
             if (response.getBody() != null) {
+                logger.info("Received response from OpenRouter.");
                 return response.getBody().getMessageContent();
             } else {
                 return "No description available";
@@ -74,7 +78,7 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
             QwenRequest.Message originalMessage = messages.get(0);
 
             QwenRequest.Message newMessage = new QwenRequest.Message(
-                    "system",
+                    "user",
                     List.of(
                             new QwenRequest.Content("text", "You are analyzing an image taken by an entrance door camera. Describe people you see. " +
                                     "Adress the user directly telling him what is at his door. " +
