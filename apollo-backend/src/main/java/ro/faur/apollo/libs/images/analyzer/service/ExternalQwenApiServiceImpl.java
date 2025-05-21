@@ -18,10 +18,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-@ConditionalOnProperty(name = "qwen.service", havingValue = "external", matchIfMissing = true)
-public class OpenrouterQwenApiServiceImpl implements QwenApiService {
+@ConditionalOnProperty(name = "qwen.service", havingValue = "external")
+public class ExternalQwenApiServiceImpl implements MediaAnalysisApiService {
 
-    private static final Logger logger = LoggerFactory.getLogger(OpenrouterQwenApiServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExternalQwenApiServiceImpl.class);
 //    private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
     private static final String API_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions";
 
@@ -31,7 +31,7 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
     @Value("${openrouter.apiKey}")
     private String openRouterApiKey;
 
-    public OpenrouterQwenApiServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public ExternalQwenApiServiceImpl(RestTemplate restTemplate, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
     }
@@ -40,9 +40,8 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
     public String getDescriptionFromImage(String base64Image) {
         try {
             QwenRequest request = new QwenRequest(base64Image);
-//            request.setModel("qwen/qwen-2-vl-72b-instruct"); // Override model for OpenRouter
             request.setModel("qwen-vl-max");
-            addSystemPromptToRequest(request);
+            addSystemPromptToRequest(request, "image");
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("Content-Type", "application/json");
@@ -71,7 +70,41 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
         }
     }
 
-    private void addSystemPromptToRequest(QwenRequest request) {
+    @Override
+    public String getDescriptionFromVideo(String base64Video) {
+        try {
+            QwenRequest request = new QwenRequest(base64Video);
+            request.setModel("qwen-vl-max");
+            addSystemPromptToRequest(request, "video");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Content-Type", "application/json");
+            headers.set("Authorization", "Bearer " + openRouterApiKey);
+
+            String requestJson = objectMapper.writeValueAsString(request);
+            logger.info("Sending request to OpenRouter for video analysis.");
+
+            HttpEntity<String> entity = new HttpEntity<>(requestJson, headers);
+            ResponseEntity<QwenResponse> response = restTemplate.exchange(
+                    API_URL,
+                    HttpMethod.POST,
+                    entity,
+                    QwenResponse.class
+            );
+
+            if (response.getBody() != null) {
+                logger.info("Received response from OpenRouter for video analysis.");
+                return response.getBody().getMessageContent();
+            } else {
+                return "No description available";
+            }
+        } catch (Exception e) {
+            logger.error("Error processing video description request", e);
+            return "Error processing video";
+        }
+    }
+
+    private void addSystemPromptToRequest(QwenRequest request, String mediaType) {
         List<QwenRequest.Message> messages = new ArrayList<>(request.getMessages());
 
         if (!messages.isEmpty()) {
@@ -80,11 +113,11 @@ public class OpenrouterQwenApiServiceImpl implements QwenApiService {
             QwenRequest.Message newMessage = new QwenRequest.Message(
                     "user",
                     List.of(
-                            new QwenRequest.Content("text", "You are analyzing an image taken by an entrance door camera. Describe people you see. " +
-                                    "Adress the user directly telling him what is at his door. " +
-                                    "Short and concise, 2 sentences." +
+                            new QwenRequest.Content("text", "You are analyzing a " + mediaType + " taken by an entrance door camera. Describe what you see. " +
+                                    "Address the user directly telling them what is at their door. " +
+                                    "Short and concise, 2 sentences. " +
                                     "If you identify security risks(masked people, violence, weapons), specify them. Masks and weapons are a clear threat."),
-                            originalMessage.getContent().get(1) // Keep the original image content
+                            originalMessage.getContent().get(1) // Keep the original media content
                     )
             );
 

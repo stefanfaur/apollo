@@ -15,6 +15,10 @@ public class ImageProcessorService {
         return mediaUrl.matches(".*\\.(jpeg|jpg|png)$");
     }
 
+    public boolean isVideo(String mediaUrl) {
+        return mediaUrl.matches(".*\\.(mp4|mov|avi|wmv)$");
+    }
+
     public String downloadAndConvertToBase64(String mediaUrl) {
         try {
             URL url = new URL(mediaUrl);

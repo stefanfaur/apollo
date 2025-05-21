@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import ro.faur.apollo.device.domain.Device;
 import ro.faur.apollo.device.repository.DeviceRepository;
 import ro.faur.apollo.libs.images.analyzer.ImageProcessorService;
-import ro.faur.apollo.libs.images.analyzer.service.QwenApiService;
+import ro.faur.apollo.libs.images.analyzer.service.MediaAnalysisApiService;
 import ro.faur.apollo.libs.mqtt.dto.HelloMessage;
 import ro.faur.apollo.libs.mqtt.dto.NotificationMessage;
 import ro.faur.apollo.notification.domain.Notification;
@@ -30,7 +30,7 @@ public class MqttService {
     private final NotificationRepository notificationRepository;
     private final ObjectMapper objectMapper;
     private final ImageProcessorService imageProcessorService;
-    private final QwenApiService qwenApiService;
+    private final MediaAnalysisApiService mediaAnalysisApiService;
     private final ExecutorService executorService;
 
     private String linkPrefix = "http://localhost:9000/apollo-bucket/";
@@ -39,12 +39,12 @@ public class MqttService {
                        NotificationRepository notificationRepository,
                        ObjectMapper objectMapper,
                        ImageProcessorService imageProcessorService,
-                       QwenApiService qwenApiService) throws MqttException {
+                       MediaAnalysisApiService mediaAnalysisApiService) throws MqttException {
         this.deviceRepository = deviceRepository;
         this.notificationRepository = notificationRepository;
         this.objectMapper = objectMapper;
         this.imageProcessorService = imageProcessorService;
-        this.qwenApiService = qwenApiService;
+        this.mediaAnalysisApiService = mediaAnalysisApiService;
 
         // Use a thread pool to handle multiple incoming notifications in parallel
         this.executorService = Executors.newFixedThreadPool(10);
@@ -106,9 +106,13 @@ public class MqttService {
                 String notificationMessage = notifMsg.getMessage();
 
                 if (notifMsg.getMediaUrl() != null) {
-                    if (imageProcessorService.isImage(linkPrefix + notifMsg.getMediaUrl())) {
-                        String base64Image = imageProcessorService.downloadAndConvertToBase64(linkPrefix + notifMsg.getMediaUrl());
-                        notificationMessage = qwenApiService.getDescriptionFromImage(base64Image);
+                    String mediaUrl = linkPrefix + notifMsg.getMediaUrl();
+                    if (imageProcessorService.isImage(mediaUrl)) {
+                        String base64Image = imageProcessorService.downloadAndConvertToBase64(mediaUrl);
+                        notificationMessage = mediaAnalysisApiService.getDescriptionFromImage(base64Image);
+                    } else if (imageProcessorService.isVideo(mediaUrl)) {
+                        String base64Video = imageProcessorService.downloadAndConvertToBase64(mediaUrl);
+                        notificationMessage = mediaAnalysisApiService.getDescriptionFromVideo(base64Video);
                     }
                 }
 
