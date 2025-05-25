@@ -1,0 +1,10 @@
+package ro.faur.apollo.notification.domain;
+
+public enum NotificationEventType {
+    DOORLOCK_HANDLE_TRIED_UNAUTHORIZED,
+    DOORLOCK_OPENED_UNAUTHORIZED,
+    DOORLOCK_OPENED_AUTHORIZED,
+    DOORLOCK_SUSPICIOUS_ACTIVITY,
+    DOORLOCK_LOST_POWER,
+    DOORLOCK_MISC,
+} 
