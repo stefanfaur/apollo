@@ -6,3 +6,12 @@ apollo-backend/prometheus/data/*
 apollo-backend/mosquitto/data/*
 apollo-backend/mosquitto/log/*
 apollo-backend/mosquitto/venv/*
+
+/microservices/user-service/target/
+/microservices/shared-libs/target/
+/microservices/notification-service/target/
+/microservices/media-analysis-service/target/
+/microservices/home-service/target/
+/microservices/file-storage-service/target/
+/microservices/device-service/target/
+/microservices/api-gateway/target/

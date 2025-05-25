@@ -1,0 +1,32 @@
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Application properties with secrets
+**/application-local.properties
+**/application-dev.properties
+**/application-prod.properties
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Build artifacts
+target/
+*.jar
+*.war
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker secrets
+secrets/ 

@@ -2,7 +2,12 @@
 <module type="JAVA_MODULE" version="4">
   <component name="AdditionalModuleElements">
     <content url="file://$MODULE_DIR$">
+      <excludeFolder url="file://$MODULE_DIR$/apollo-backend/loadtest/venv/bin" />
+      <excludeFolder url="file://$MODULE_DIR$/apollo-backend/loadtest/venv/include" />
+      <excludeFolder url="file://$MODULE_DIR$/apollo-backend/loadtest/venv/lib" />
       <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/app-example" />
+      <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/ios/Pods" />
+      <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/ios/build" />
     </content>
   </component>
 </module>
