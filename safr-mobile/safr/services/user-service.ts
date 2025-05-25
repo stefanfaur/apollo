@@ -4,11 +4,11 @@ import {UserDTO} from "@/models/userDTO";
 
 
 export const userService = {
-  searchUsers: async (query: string, page: number = 0, size: number = 10): Promise<UserDTO[]> => {
+  searchUsers: async (email: string, page: number = 0, size: number = 10): Promise<UserDTO[]> => {
     try {
       const response = await apiClient.get('/users/search', {
         params: {
-          query,
+          email,
           page,
           size
         }

@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
 
             // redirect to entry
             router.replace('/(entry)');
-        } else if (error.response?.status === 400) {
+        } else if (error.response?.status >= 400 && error.response?.status < 500) {
             console.warn("Bad Request! Showing alert.");
 
             // display the error message in an alert
