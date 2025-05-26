@@ -1,0 +1,230 @@
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: apollo-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-apollo_db}
+      POSTGRES_USER: ${DB_USERNAME:-apollo_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-apollo_password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - apollo-network
+
+  # MinIO (S3 compatible storage)
+  minio:
+    image: minio/minio:latest
+    container_name: apollo-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-apollo_minio_user}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-apollo_minio_password}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - apollo-network
+
+  # MQTT Broker
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: apollo-mosquitto
+    ports:
+      - "1883:1883"
+      - "9002:9001"
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - apollo-network
+
+  # API Gateway
+  api-gateway:
+    image: apollo/api-gateway:latest
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: apollo-api-gateway
+    environment:
+      - API_GATEWAY_PORT=${API_GATEWAY_PORT:-8080}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400}
+      - KUBERNETES_ENABLED=false
+      - USER_SERVICE_URL=http://user-service:8087
+      - DEVICE_SERVICE_URL=http://device-service:8082
+      - MEDIA_ANALYSIS_SERVICE_URL=http://media-analysis-service:8083
+      - HOME_SERVICE_URL=http://home-service:8084
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8085
+      - FILE_STORAGE_SERVICE_URL=http://file-storage-service:8086
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${API_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      - postgres
+    networks:
+      - apollo-network
+
+  # User Service
+  user-service:
+    image: apollo/user-service:latest
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    container_name: apollo-user-service
+    environment:
+      - USER_SERVICE_PORT=${USER_SERVICE_PORT:-8087}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-apollo_db}
+      - DB_USERNAME=${DB_USERNAME:-apollo_user}
+      - DB_PASSWORD=${DB_PASSWORD:-apollo_password}
+      - JWT_SECRET=${JWT_SECRET}
+      - KUBERNETES_ENABLED=false
+      - GOOGLE_IOS_CLIENT_ID=${GOOGLE_IOS_CLIENT_ID}
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${USER_SERVICE_PORT:-8087}:8087"
+    depends_on:
+      - postgres
+    networks:
+      - apollo-network
+
+  # Device Service
+  device-service:
+    image: apollo/device-service:latest
+    build:
+      context: .
+      dockerfile: device-service/Dockerfile
+    container_name: apollo-device-service
+    environment:
+      - DEVICE_SERVICE_PORT=${DEVICE_SERVICE_PORT:-8082}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-apollo_db}
+      - DB_USERNAME=${DB_USERNAME:-apollo_user}
+      - DB_PASSWORD=${DB_PASSWORD:-apollo_password}
+      - JWT_SECRET=${JWT_SECRET}
+      - KUBERNETES_ENABLED=false
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${DEVICE_SERVICE_PORT:-8082}:8082"
+    depends_on:
+      - postgres
+    networks:
+      - apollo-network
+
+  # Media Analysis Service
+  media-analysis-service:
+    image: apollo/media-analysis-service:latest
+    build:
+      context: .
+      dockerfile: media-analysis-service/Dockerfile
+    container_name: apollo-media-analysis-service
+    environment:
+      - MEDIA_ANALYSIS_SERVICE_PORT=${MEDIA_ANALYSIS_SERVICE_PORT:-8083}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - KUBERNETES_ENABLED=false
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${MEDIA_ANALYSIS_SERVICE_PORT:-8083}:8083"
+    networks:
+      - apollo-network
+
+  # Home Service
+  home-service:
+    image: apollo/home-service:latest
+    build:
+      context: .
+      dockerfile: home-service/Dockerfile
+    container_name: apollo-home-service
+    environment:
+      - HOME_SERVICE_PORT=${HOME_SERVICE_PORT:-8084}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-apollo_db}
+      - DB_USERNAME=${DB_USERNAME:-apollo_user}
+      - DB_PASSWORD=${DB_PASSWORD:-apollo_password}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400}
+      - KUBERNETES_ENABLED=false
+      - USER_SERVICE_URL=http://user-service:8087
+      - DEVICE_SERVICE_URL=http://device-service:8082
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${HOME_SERVICE_PORT:-8084}:8084"
+    depends_on:
+      - postgres
+    networks:
+      - apollo-network
+
+  # Notification Service
+  notification-service:
+    image: apollo/notification-service:latest
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: apollo-notification-service
+    environment:
+      - NOTIFICATION_SERVICE_PORT=${NOTIFICATION_SERVICE_PORT:-8085}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-apollo_db}
+      - DB_USERNAME=${DB_USERNAME:-apollo_user}
+      - DB_PASSWORD=${DB_PASSWORD:-apollo_password}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400}
+      - KUBERNETES_ENABLED=false
+      - MQTT_BROKER_URL=tcp://mosquitto:1883
+      - USER_SERVICE_URL=http://user-service:8087
+      - DEVICE_SERVICE_URL=http://device-service:8082
+      - MEDIA_ANALYSIS_SERVICE_URL=http://media-analysis-service:8083
+      - HOME_SERVICE_URL=http://home-service:8084
+      - MINIO_URL=http://minio:9000
+      - MINIO_BUCKET=${MINIO_BUCKET:-apollo-bucket}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8085}:8085"
+    depends_on:
+      - postgres
+      - mosquitto
+      - minio
+    networks:
+      - apollo-network
+
+  # File Storage Service
+  file-storage-service:
+    image: apollo/file-storage-service:latest
+    build:
+      context: .
+      dockerfile: file-storage-service/Dockerfile
+    container_name: apollo-file-storage-service
+    environment:
+      - FILE_STORAGE_SERVICE_PORT=${FILE_STORAGE_SERVICE_PORT:-8086}
+      - JWT_SECRET=${JWT_SECRET}
+      - KUBERNETES_ENABLED=false
+      - MINIO_URL=http://minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-apollo_minio_user}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-apollo_minio_password}
+      - MINIO_BUCKET=${MINIO_BUCKET:-apollo-bucket}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "${FILE_STORAGE_SERVICE_PORT:-8086}:8086"
+    depends_on:
+      - minio
+    networks:
+      - apollo-network
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  apollo-network:
+    driver: bridge 
