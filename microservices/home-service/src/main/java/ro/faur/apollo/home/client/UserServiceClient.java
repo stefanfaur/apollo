@@ -8,7 +8,11 @@ import ro.faur.apollo.shared.dto.UserDTO;
 
 import java.util.List;
 
-@FeignClient(name = "user-service", url = "${services.user.url:http://localhost:8087}")
+@FeignClient(
+    name = "user-service",
+    url = "${services.user.url:}",
+    fallback = UserServiceClientFallback.class
+)
 public interface UserServiceClient {
 
     @GetMapping("/api/users/search")

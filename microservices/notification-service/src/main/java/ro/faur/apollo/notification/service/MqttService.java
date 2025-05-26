@@ -1,10 +1,12 @@
 package ro.faur.apollo.notification.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.notification.client.DeviceServiceClient;
 import ro.faur.apollo.notification.client.MediaAnalysisServiceClient;
@@ -27,9 +29,16 @@ public class MqttService {
     private final DeviceServiceClient deviceServiceClient;
     private final MediaAnalysisServiceClient mediaAnalysisServiceClient;
     private final ExecutorService executorService;
-    private final MqttClient mqttClient;
+    private MqttClient mqttClient;
 
-    private final String linkPrefix = "http://localhost:9000/apollo-bucket";
+    @Value("${mqtt.broker.url}")
+    private String mqttBrokerUrl;
+    @Value("${minio.url}")
+    private String minioUrl;
+    @Value("${minio.bucket}")
+    private String minioBucket;
+
+    private String linkPrefix;
 
     public MqttService(NotificationService notificationService,
                        ObjectMapper objectMapper,
@@ -40,13 +49,22 @@ public class MqttService {
         this.deviceServiceClient = deviceServiceClient;
         this.mediaAnalysisServiceClient = mediaAnalysisServiceClient;
         this.executorService = Executors.newFixedThreadPool(10);
+    }
 
-        mqttClient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId(), new MemoryPersistence());
-        MqttConnectOptions options = new MqttConnectOptions();
-        options.setAutomaticReconnect(true);
-        options.setCleanSession(true);
-        mqttClient.connect(options);
-        subscribeToTopics();
+    @PostConstruct
+    public void initialize() {
+        this.linkPrefix = "http://" + minioUrl + "/" + minioBucket;
+        try {
+            mqttClient = new MqttClient(mqttBrokerUrl, MqttClient.generateClientId(), new MemoryPersistence());
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setAutomaticReconnect(true);
+            options.setCleanSession(true);
+            mqttClient.connect(options);
+            subscribeToTopics();
+        } catch (MqttException e) {
+            logger.error("Failed to connect to MQTT broker at {}: {}", mqttBrokerUrl, e.getMessage());
+            throw new RuntimeException("Could not connect to MQTT broker", e);
+        }
     }
 
     private void subscribeToTopics() throws MqttException {
@@ -60,7 +78,7 @@ public class MqttService {
             try {
                 String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
                 HelloMessage helloMsg = objectMapper.readValue(payload, HelloMessage.class);
-                
+
                 if (helloMsg.getHardwareId() == null || helloMsg.getDeviceType() == null) {
                     logger.warn("Invalid hello message: missing required fields. Payload: {}", payload);
                     return;
@@ -68,7 +86,7 @@ public class MqttService {
 
                 // Call Device Service to register/update device
                 registerDevice(helloMsg);
-                
+
             } catch (Exception e) {
                 logger.error("Error processing hello message", e);
             }
@@ -107,7 +125,7 @@ public class MqttService {
                 }
                 notification.setType(NotificationEventType.DOORLOCK_MISC);
                 notification.setDeviceUuid(deviceUuid);
-                
+
                 notificationService.saveNotification(notification);
                 logger.info("Saved AI-generated notification for device: {}", notifMsg.getHardwareId());
 

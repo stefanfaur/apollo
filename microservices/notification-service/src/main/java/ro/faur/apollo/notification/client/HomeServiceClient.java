@@ -7,7 +7,11 @@ import ro.faur.apollo.notification.dto.HomeDTO;
 
 import java.util.List;
 
-@FeignClient(name = "home-service", url = "${services.home.url:http://localhost:8084}")
+@FeignClient(
+    name = "home-service",
+    url = "${services.home.url:}",
+    fallback = HomeServiceClientFallback.class
+)
 public interface HomeServiceClient {
 
     @GetMapping("/api/home/user/{userUuid}")

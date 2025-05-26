@@ -6,7 +6,11 @@ import ro.faur.apollo.home.dto.DeviceDTO;
 
 import java.util.List;
 
-@FeignClient(name = "device-service", url = "${services.device.url:http://localhost:8082}")
+@FeignClient(
+    name = "device-service",
+    url = "${services.device.url:}",
+    fallback = DeviceServiceClientFallback.class
+)
 public interface DeviceServiceClient {
 
     @GetMapping("/api/devices")

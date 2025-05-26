@@ -1,9 +1,15 @@
 package ro.faur.apollo.notification.client;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.context.annotation.Primary;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "device-service", url = "${services.device.url:http://localhost:8082}")
+@FeignClient(
+    name = "device-service",
+    url = "${services.device.url:}",
+    fallback = DeviceServiceClientFallback.class
+)
+@Primary
 public interface DeviceServiceClient {
 
     @PostMapping("/api/devices/register")
