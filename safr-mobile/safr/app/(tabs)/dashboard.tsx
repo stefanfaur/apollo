@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { BarChart, PieChart, LineChart } from 'react-native-chart-kit';
+import { BarChart, PieChart, LineChart } from 'react-native-gifted-charts';
 import { Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
@@ -17,31 +17,29 @@ export default function DashboardScreen() {
         { name: 'Front Door', usage: 15 },
     ];
 
-    const barChartData = {
-        labels: ['Living Room', 'Kitchen', 'Garage', 'Front Door'],
-        datasets: [
-            {
-                data: [40, 20, 25, 15],
-            },
-        ],
-    };
-
-    const pieChartData = [
-        { name: 'Living Room', population: 40, color: '#ff6384', legendFontColor: '#fff', legendFontSize: 12 },
-        { name: 'Kitchen', population: 20, color: '#36a2eb', legendFontColor: '#fff', legendFontSize: 12 },
-        { name: 'Garage', population: 25, color: '#ffcd56', legendFontColor: '#fff', legendFontSize: 12 },
-        { name: 'Front Door', population: 15, color: '#4bc0c0', legendFontColor: '#fff', legendFontSize: 12 },
+    const barChartData = [
+        { value: 40, label: 'Living Room', frontColor: '#ff6384' },
+        { value: 20, label: 'Kitchen', frontColor: '#36a2eb' },
+        { value: 25, label: 'Garage', frontColor: '#ffcd56' },
+        { value: 15, label: 'Front Door', frontColor: '#4bc0c0' },
     ];
 
-    const lineChartData = {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        datasets: [
-            {
-                data: [2, 4, 1, 5, 8, 3, 2],
-                strokeWidth: 2, // Line thickness
-            },
-        ],
-    };
+    const pieChartData = [
+        { value: 40, color: '#ff6384', text: 'Living Room' },
+        { value: 20, color: '#36a2eb', text: 'Kitchen' },
+        { value: 25, color: '#ffcd56', text: 'Garage' },
+        { value: 15, color: '#4bc0c0', text: 'Front Door' },
+    ];
+
+    const lineChartData = [
+        { value: 2, label: 'Mon' },
+        { value: 4, label: 'Tue' },
+        { value: 1, label: 'Wed' },
+        { value: 5, label: 'Thu' },
+        { value: 8, label: 'Fri' },
+        { value: 3, label: 'Sat' },
+        { value: 2, label: 'Sun' },
+    ];
 
     return (
         <ScrollView style={styles.container}>
@@ -78,28 +76,19 @@ export default function DashboardScreen() {
                 <Text style={styles.chartTitle}>Guest Device Usage</Text>
                 <BarChart
                     data={barChartData}
-                    width={screenWidth - 80} // Adjust width
+                    width={screenWidth - 100}
                     height={220}
-                    yAxisLabel=""
-                    yAxisSuffix="%"
-                    chartConfig={{
-                        backgroundColor: '#1f2937',
-                        backgroundGradientFrom: '#1f2937',
-                        backgroundGradientTo: '#1f2937',
-                        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        style: { borderRadius: 16 },
-                        propsForBackgroundLines: {
-                            strokeWidth: 0,
-                        },
-                    }}
-                    style={{
-                        marginVertical: 8,
-                        borderRadius: 16,
-                        alignSelf: 'center',
-                    }}
+                    backgroundColor="#1f2937"
+                    barBorderRadius={4}
+                    frontColor="#4bc0c0"
+                    yAxisThickness={0}
+                    xAxisThickness={0}
+                    hideRules
+                    yAxisTextStyle={{ color: '#fff', fontSize: 12 }}
+                    xAxisLabelTextStyle={{ color: '#fff', fontSize: 10 }}
+                    noOfSections={4}
+                    maxValue={50}
                 />
-
             </View>
 
             {/* Pie Chart: Door Access */}
@@ -107,16 +96,15 @@ export default function DashboardScreen() {
                 <Text style={styles.chartTitle}>Door Access Distribution</Text>
                 <PieChart
                     data={pieChartData}
-                    width={screenWidth - 40}
-                    height={220}
-                    chartConfig={{
-                        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                    }}
-                    accessor="population"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
-                    style={{ marginVertical: 8, borderRadius: 16, alignSelf: 'center' }}
+                    radius={80}
+                    showText
+                    textColor="#fff"
+                    textSize={12}
+                    showTextBackground
+                    textBackgroundColor="#1f2937"
+                    textBackgroundRadius={8}
+                    strokeColor="#2d3748"
+                    strokeWidth={2}
                 />
             </View>
 
@@ -125,23 +113,21 @@ export default function DashboardScreen() {
                 <Text style={styles.chartTitle}>Suspicious Activity Trend</Text>
                 <LineChart
                     data={lineChartData}
-                    width={screenWidth - 80}
+                    width={screenWidth - 100}
                     height={220}
-                    chartConfig={{
-                        backgroundColor: '#1f2937',
-                        backgroundGradientFrom: '#1f2937',
-                        backgroundGradientTo: '#1f2937',
-                        color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                        style: { borderRadius: 16 },
-                        propsForDots: {
-                            r: '6',
-                            strokeWidth: '2',
-                            stroke: '#ffa726',
-                        },
-                    }}
-                    bezier
-                    style={{ marginVertical: 8, borderRadius: 16, alignSelf: 'center' }}
+                    backgroundColor="#1f2937"
+                    color="#ffa726"
+                    thickness={3}
+                    dataPointsColor="#ffa726"
+                    dataPointsRadius={6}
+                    curved
+                    yAxisThickness={0}
+                    xAxisThickness={0}
+                    hideRules
+                    yAxisTextStyle={{ color: '#fff', fontSize: 12 }}
+                    xAxisLabelTextStyle={{ color: '#fff', fontSize: 10 }}
+                    noOfSections={4}
+                    maxValue={10}
                 />
             </View>
         </ScrollView>

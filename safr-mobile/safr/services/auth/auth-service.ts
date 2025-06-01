@@ -23,7 +23,7 @@ export interface RegisterResponse {
 export const AuthService = {
     login: async (data: LoginRequest): Promise<LoginResponse> => {
         try {
-            console.log("Register request to: ", `${API_CONFIG.BASE_URL}/api/auth/login`)
+            console.log("Login request to: ", `${API_CONFIG.BASE_URL}/api/auth/login`)
             const response = await axios.post<LoginResponse>(`${API_CONFIG.BASE_URL}/api/auth/login`, data);
             return response.data;
         } catch (error: any) {
