@@ -1,11 +1,11 @@
 .DS_Store
 .idea
 paho*
-apollo-backend/db/*
-apollo-backend/prometheus/data/*
-apollo-backend/mosquitto/data/*
-apollo-backend/mosquitto/log/*
-apollo-backend/mosquitto/venv/*
+backend-misc/db/*
+backend-misc/prometheus/data/*
+backend-misc/mosquitto/data/*
+backend-misc/mosquitto/log/*
+backend-misc/mosquitto/venv/*
 
 /microservices/user-service/target/
 /microservices/shared-libs/target/
