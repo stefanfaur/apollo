@@ -1,0 +1,37 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to base
+resources:
+  - ../../base
+
+# Local environment specific configurations
+namePrefix: ""
+nameSuffix: ""
+
+# Image configurations for local development
+images:
+  - name: apollo/api-gateway
+    newTag: latest
+  - name: apollo/user-service
+    newTag: latest
+  - name: apollo/device-service
+    newTag: latest
+  - name: apollo/media-analysis-service
+    newTag: latest
+  - name: apollo/home-service
+    newTag: latest
+  - name: apollo/notification-service
+    newTag: latest
+  - name: apollo/file-storage-service
+    newTag: latest
+
+patchesStrategicMerge:
+  - patches/local-resources.yaml
+
+commonLabels:
+  environment: local
+  deployment-type: development
+
+commonAnnotations:
+  deployment.kubernetes.io/environment: "local"

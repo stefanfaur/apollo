@@ -1,0 +1,137 @@
+# Basic settings
+replicas: 1
+
+# Admin credentials
+adminUser: admin
+adminPassword: apollo123
+
+# Resource configuration
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "200m"
+
+# Storage persistence
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClassName: ""
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3000
+
+# Ingress for external access
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  hosts:
+    - grafana.local
+  path: /
+
+# Data source configurations
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      # Prometheus - Metrics
+      - name: prometheus
+        type: prometheus
+        url: http://prometheus-server:80
+        access: proxy
+        isDefault: false
+        jsonData:
+          timeInterval: 30s
+          queryTimeout: 60s
+          httpMethod: POST
+        editable: true
+
+      # Loki - Logs  
+      - name: loki
+        type: loki
+        url: http://loki:3100
+        access: proxy
+        isDefault: false
+        jsonData:
+          maxLines: 5000
+          timeout: 60s
+          derivedFields:
+            # Link logs to traces
+            - name: trace_id
+              matcherRegex: "trace_id=([a-f0-9]+)"
+              url: "${__value.raw}"
+              datasourceUid: tempo
+        editable: true
+
+      # Tempo - Traces (Updated for Tempo Operator)
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo-tempo:3200
+        uid: tempo
+        jsonData:
+          timeout: 60s
+          tracesToLogsV2:
+            # Link traces to logs
+            datasourceUid: loki
+            tags: ['job', 'instance', 'pod', 'namespace']
+            filterByTraceID: true
+            filterBySpanID: false
+            customQuery: true
+            query: '{namespace="${__span.tags.namespace}"} |= "${__span.traceId}"'
+          tracesToProfiles:
+            # Link traces to profiles
+            datasourceUid: pyroscope
+            tags: ['job', 'instance', 'pod', 'namespace']  
+            profileTypeId: 'cpu:samples:count:cpu:nanoseconds'
+            customQuery: true
+            query: 'process_cpu:cpu:nanoseconds:cpu:nanoseconds{service_name="${__span.tags["service.name"]}"}'
+          serviceMap:
+            datasourceUid: prometheus
+        editable: true
+
+      # Pyroscope - Profiling
+      - name: pyroscope
+        type: grafana-pyroscope-datasource
+        url: http://pyroscope:4040
+        access: proxy
+        isDefault: false
+        jsonData:
+          minStep: '15s'
+          timeout: 60s
+          keepCookies: []
+        editable: true
+
+# Dashboard providers
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers: []
+
+# Basic configuration
+grafana.ini:
+  server:
+    root_url: "http://grafana.local"
+  security:
+    allow_embedding: true
+  auth.anonymous:
+    enabled: false
+  feature_toggles:
+    # Enable TraceQL metrics feature (experimental)
+    enable: traceQLMetrics
+  
+# Security settings
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 472
+  fsGroup: 472
+
+# Disable init container to avoid permission issues
+initChownData:
+  enabled: false 

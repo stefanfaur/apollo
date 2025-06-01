@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Generate a secure JWT secret for Apollo microservices
-# This script generates a base64-encoded 256-bit secret suitable for JWT signing
+# Generate a secure JWT secret for Spring Security
+# Generates a base64-encoded 256-bit secret suitable for JWT signing
 
 echo "🔐 Generating JWT Secret for Apollo Microservices"
 echo "================================================"

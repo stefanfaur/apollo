@@ -1,0 +1,157 @@
+# Based on loki-stack chart docs
+
+loki:
+  image:
+    tag: 2.9.7
+  
+  # Enable persistence
+  persistence:
+    enabled: true
+    storageClassName: ""
+    size: 10Gi
+  
+  # Security context to fix permission issues
+  securityContext:
+    fsGroup: 10001
+    runAsGroup: 10001
+    runAsNonRoot: true
+    runAsUser: 10001
+  
+  # Service account
+  serviceAccount:
+    create: true
+  
+  # Basic configuration for SingleBinary mode
+  config:
+    auth_enabled: false
+    
+    server:
+      http_listen_port: 3100
+      log_level: info
+    
+    common:
+      path_prefix: /data/loki
+      storage:
+        filesystem:
+          chunks_directory: /data/loki/chunks
+          rules_directory: /data/loki/rules
+      replication_factor: 1
+      ring:
+        instance_addr: 127.0.0.1
+        kvstore:
+          store: inmemory
+    
+    limits_config:
+      retention_period: 168h  # 7 days
+      ingestion_rate_mb: 16
+      ingestion_burst_size_mb: 32
+      max_query_parallelism: 32
+      # Enable volume endpoint for Grafana compatibility
+      volume_enabled: true
+    
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+    
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /data/loki/boltdb-shipper-active
+        cache_location: /data/loki/boltdb-shipper-cache
+        shared_store: filesystem
+      filesystem:
+        directory: /data/loki/chunks
+    
+    compactor:
+      working_directory: /data/loki/boltdb-shipper-compactor
+    
+    ruler:
+      storage:
+        type: local
+        local:
+          directory: /data/loki/rules
+      rule_path: /data/loki/rules-temp
+      alertmanager_url: http://localhost:9093
+      ring:
+        kvstore:
+          store: inmemory
+      enable_api: true
+
+# Promtail configuration for log collection
+promtail:
+  enabled: true
+  
+  # Resource configuration
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  
+  # Configuration for Kubernetes log collection
+  config:
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 9095
+    
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+    
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        pipeline_stages:
+          - cri: {}
+        relabel_configs:
+          - source_labels:
+              - __meta_kubernetes_pod_controller_name
+            regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+            action: replace
+            target_label: __tmp_controller_name
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_name
+              - __meta_kubernetes_pod_label_app
+              - __tmp_controller_name
+              - __meta_kubernetes_pod_name
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: app
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_instance
+              - __meta_kubernetes_pod_label_instance
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: instance
+          - source_labels:
+              - __meta_kubernetes_pod_label_app_kubernetes_io_component
+              - __meta_kubernetes_pod_label_component
+            regex: ^;*([^;]+)(;.*)?$
+            action: replace
+            target_label: component
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_pod_node_name
+            target_label: node_name
+          - action: replace
+            source_labels:
+              - __meta_kubernetes_namespace
+            target_label: namespace
+          - action: replace
+            replacement: /var/log/pods/*$1/*.log
+            separator: /
+            source_labels:
+              - __meta_kubernetes_pod_uid
+              - __meta_kubernetes_pod_container_name
+            target_label: __path__
+
+# Disable Grafana since we have it separately
+grafana:
+  enabled: false 

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    
+    <!-- Define properties -->
+    <springProperty scope="context" name="springAppName" source="spring.application.name"/>
+    <springProperty scope="context" name="logLevel" source="LOG_LEVEL" defaultValue="INFO"/>
+    
+    <!-- Console appender with JSON format -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <version/>
+                <logLevel/>
+                <message/>
+                <mdc/>
+                <arguments/>
+                <stackTrace/>
+                <pattern>
+                    <pattern>
+                        {
+                            "service": "${springAppName:-}",
+                            "trace": "%X{traceId:-}",
+                            "span": "%X{spanId:-}",
+                            "correlation_id": "%X{correlationId:-}",
+                            "user_id": "%X{userId:-}",
+                            "request_id": "%X{requestId:-}",
+                            "thread": "%thread",
+                            "logger": "%logger{40}",
+                            "method": "%X{method:-}",
+                            "uri": "%X{uri:-}",
+                            "status": "%X{status:-}",
+                            "duration": "%X{duration:-}",
+                            "pod": "${HOSTNAME:-}",
+                            "namespace": "${NAMESPACE:-apollo}"
+                        }
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- Async appender for better performance -->
+    <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="CONSOLE"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <!-- Root logger configuration -->
+    <root level="${logLevel}">
+        <appender-ref ref="ASYNC_CONSOLE"/>
+    </root>
+    
+    <!-- Apollo application loggers -->
+    <logger name="ro.faur.apollo" level="${logLevel}" additivity="false">
+        <appender-ref ref="ASYNC_CONSOLE"/>
+    </logger>
+
+    <!-- Spring Framework loggers -->
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.security" level="INFO"/>
+    <logger name="org.springframework.cloud.gateway" level="INFO"/>
+    <logger name="org.springframework.cloud.openfeign" level="INFO"/>
+    
+    <!-- Database loggers -->
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+    <logger name="org.springframework.jdbc.core" level="DEBUG"/>
+    
+    <!-- HTTP client loggers -->
+    <logger name="feign" level="DEBUG"/>
+    <logger name="org.apache.http" level="INFO"/>
+    
+    <!-- Actuator and metrics -->
+    <logger name="org.springframework.boot.actuator" level="INFO"/>
+    <logger name="io.micrometer" level="INFO"/>
+    
+    <!-- Third-party libraries -->
+    <logger name="com.zaxxer.hikari" level="INFO"/>
+    <logger name="org.eclipse.paho" level="INFO"/>
+    <logger name="io.minio" level="INFO"/>
+    
+</configuration>

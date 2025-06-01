@@ -1,0 +1,47 @@
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoMonolithic
+metadata:
+  name: tempo
+  namespace: monitoring
+spec:
+  storage:
+    traces:
+      backend: pv
+      size: 10Gi
+  jaegerui:
+    enabled: true
+    route:
+      enabled: false  # We'll use NodePort for local k3d
+  extraConfig:
+    tempo:
+      compactor:
+        compaction:
+          block_retention: 24h
+      # Enable metrics generator with local_blocks processor for TraceQL metrics
+      metrics_generator:
+        storage:
+          path: /var/tempo/generator/wal
+        ring:
+          kvstore:
+            store: inmemory
+          instance_interface_names: ["eth0", "lo"]
+        processor:
+          span_metrics: {}
+          service_graphs: {}
+          local_blocks: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo-tempo-jaegerui-nodeport
+  namespace: monitoring
+spec:
+  type: NodePort
+  ports:
+    - port: 16686
+      targetPort: 16686
+      nodePort: 30001
+      name: jaeger-ui
+  selector:
+    app.kubernetes.io/name: tempo-monolithic
+    app.kubernetes.io/instance: tempo 

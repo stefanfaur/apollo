@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: apollo
+  labels:
+    app: notification-service
+    component: microservice
+    version: v1
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8085"
+    prometheus.io/path: "/actuator/prometheus"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        component: microservice
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8085"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      serviceAccountName: apollo-service-account
+      containers:
+      - name: notification-service
+        image: apollo/notification-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8085
+          name: http
+        env:
+        - name: KUBERNETES_ENABLED
+          value: "true"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+        - name: NOTIFICATION_SERVICE_PORT
+          value: "8085"
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "apollo_db"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: db-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: db-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: jwt-secret
+        - name: MQTT_BROKER_URL
+          value: "tcp://mosquitto-service.apollo.svc.cluster.local:1883"
+        - name: LOG_LEVEL
+          value: "INFO"
+        # Observability Environment Variables
+        - name: ENVIRONMENT
+          value: "kubernetes"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        # OpenTelemetry Configuration
+        - name: OTEL_SERVICE_NAME
+          value: "notification-service"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://tempo-tempo.monitoring.svc.cluster.local:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=notification-service,service.version=1.0.0"
+        # Pyroscope Configuration
+        - name: PYROSCOPE_APPLICATION_NAME
+          value: "notification-service"
+        - name: PYROSCOPE_SERVER_ADDRESS
+          value: "http://pyroscope.monitoring.svc.cluster.local:4040"
+        - name: PYROSCOPE_FORMAT
+          value: "jfr"
+        - name: PYROSCOPE_PROFILER_EVENT
+          value: "itimer"
+        - name: PYROSCOPE_PROFILER_ALLOC
+          value: "512k"
+        - name: PYROSCOPE_PROFILER_LOCK
+          value: "10ms"
+        - name: PYROSCOPE_UPLOAD_INTERVAL
+          value: "15s"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8085
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8085
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: logs
+        emptyDir: {} 

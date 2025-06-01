@@ -1,0 +1,91 @@
+# Based on grafana/pyroscope chart structure
+
+pyroscope:
+  # Deployment configuration
+  replicaCount: 1
+  
+  # Image configuration
+  image:
+    repository: grafana/pyroscope
+    pullPolicy: IfNotPresent
+    tag: "1.13.4"
+  
+  # Extra arguments for the server
+  extraArgs:
+    log.level: info
+  
+  # Resource configuration
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+  
+  # Service account
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  # Pod annotations for self-profiling
+  podAnnotations:
+    profiles.grafana.com/memory.scrape: "true"
+    profiles.grafana.com/memory.port_name: http2
+    profiles.grafana.com/cpu.scrape: "true"
+    profiles.grafana.com/cpu.port_name: http2
+    profiles.grafana.com/goroutine.scrape: "true"
+    profiles.grafana.com/goroutine.port_name: http2
+  
+  # Security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+  
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 4040
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 5Gi
+
+# Ingress configuration - disabled for now
+ingress:
+  enabled: false
+
+# Configuration overrides for pyroscope.yaml
+config:
+  # This will be merged into the default configuration
+  target: all
+  
+  server:
+    http_listen_port: 4040
+    log_level: info
+  
+  storage:
+    backend: filesystem
+    filesystem:
+      directory: /data
+  
+  api:
+    max_request_parallelism: 32
+  
+  usage_stats:
+    enabled: false 

@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: apollo
+  labels:
+    app: user-service
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8087"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      serviceAccountName: apollo-service-account
+      containers:
+      - name: user-service
+        image: apollo/user-service:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8087
+          name: http
+        env:
+        - name: KUBERNETES_ENABLED
+          value: "true"
+        - name: USER_SERVICE_PORT
+          value: "8087"
+        - name: DB_HOST
+          value: "postgres-service"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "apollo_db"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: db-username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: db-password
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: jwt-secret
+        - name: GOOGLE_IOS_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: google-ios-client-id
+        - name: GOOGLE_OAUTH_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: google-oauth-client-id
+        - name: GOOGLE_OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: apollo-secrets
+              key: google-oauth-client-secret
+        - name: LOG_LEVEL
+          value: "INFO"
+        # Observability Environment Variables
+        - name: SPRING_PROFILES_ACTIVE
+          value: "kubernetes"
+        - name: ENVIRONMENT
+          value: "kubernetes"
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        # OpenTelemetry Configuration
+        - name: OTEL_SERVICE_NAME
+          value: "user-service"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://tempo-tempo.monitoring.svc.cluster.local:4318"
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: "http/protobuf"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=user-service,service.version=1.0.0"
+        # Pyroscope Configuration
+        - name: PYROSCOPE_APPLICATION_NAME
+          value: "user-service"
+        - name: PYROSCOPE_SERVER_ADDRESS
+          value: "http://pyroscope.monitoring.svc.cluster.local:4040"
+        - name: PYROSCOPE_FORMAT
+          value: "jfr"
+        - name: PYROSCOPE_PROFILER_EVENT
+          value: "itimer"
+        - name: PYROSCOPE_PROFILER_ALLOC
+          value: "512k"
+        - name: PYROSCOPE_PROFILER_LOCK
+          value: "10ms"
+        - name: PYROSCOPE_UPLOAD_INTERVAL
+          value: "15s"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8087
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8087
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m" 

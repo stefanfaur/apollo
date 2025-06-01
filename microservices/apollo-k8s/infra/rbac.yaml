@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: apollo-service-account
+  namespace: apollo
+  labels:
+    app: apollo
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: apollo-service-discovery
+  labels:
+    app: apollo
+rules:
+- apiGroups: [""]
+  resources: ["services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apollo-service-discovery
+  labels:
+    app: apollo
+subjects:
+- kind: ServiceAccount
+  name: apollo-service-account
+  namespace: apollo
+roleRef:
+  kind: ClusterRole
+  name: apollo-service-discovery
+  apiGroup: rbac.authorization.k8s.io 

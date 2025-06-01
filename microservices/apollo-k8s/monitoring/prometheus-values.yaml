@@ -1,0 +1,72 @@
+# Prometheus configuration for single-node deployment
+server:
+  enabled: true
+  replicaCount: 1
+  
+  # Resource configuration
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  
+  # Storage configuration
+  persistentVolume:
+    enabled: true
+    size: 8Gi
+    storageClass: ""
+  
+  # Scrape configuration
+  global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+  
+  # Service discovery for Apollo services
+  extraScrapeConfigs: |
+    - job_name: 'apollo-services'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - apollo
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+
+# Disable components not needed for single-node setup
+alertmanager:
+  enabled: false
+
+pushgateway:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9090 

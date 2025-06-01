@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Reference to base
+resources:
+  - ../../base
+
+# Production environment specific configurations
+namePrefix: ""
+nameSuffix: ""
+
+# Image configurations for production
+images:
+  - name: apollo/api-gateway
+    newTag: v1.0.0
+  - name: apollo/user-service
+    newTag: v1.0.0
+  - name: apollo/device-service
+    newTag: v1.0.0
+  - name: apollo/media-analysis-service
+    newTag: v1.0.0
+  - name: apollo/home-service
+    newTag: v1.0.0
+  - name: apollo/notification-service
+    newTag: v1.0.0
+  - name: apollo/file-storage-service
+    newTag: v1.0.0
+
+# Patches for production resources
+# Currently missing
+patchesStrategicMerge:
+  - patches/production-resources.yaml
+  - patches/production-ingress.yaml
+
+# Production environment labels
+commonLabels:
+  environment: production
+  deployment-type: production
+
+# Production annotations
+commonAnnotations:
+  deployment.kubernetes.io/environment: "production" 

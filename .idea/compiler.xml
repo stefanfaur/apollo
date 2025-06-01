@@ -7,17 +7,19 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="media-analysis-service" />
-        <module name="home-service" />
-        <module name="api-gateway" />
         <module name="apollo" />
-        <module name="file-storage-service" />
         <module name="shared-libs" />
-        <module name="user-service" />
-        <module name="device-service" />
-        <module name="notification-service" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="api-gateway" target="17" />
+      <module name="device-service" target="17" />
+      <module name="file-storage-service" target="17" />
+      <module name="home-service" target="17" />
+      <module name="media-analysis-service" target="17" />
+      <module name="notification-service" target="17" />
+      <module name="user-service" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">

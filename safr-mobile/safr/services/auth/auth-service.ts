@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // TODO: extract this to a config file
-const API_URL = 'http://localhost:8080';
+const API_URL = 'http://apollo.local';
 
 export interface LoginRequest {
     username: string;
@@ -25,6 +25,7 @@ export interface RegisterResponse {
 export const AuthService = {
     login: async (data: LoginRequest): Promise<LoginResponse> => {
         try {
+            console.log("Register request to: ", `${API_URL}/api/auth/login`)
             const response = await axios.post<LoginResponse>(`${API_URL}/api/auth/login`, data);
             return response.data;
         } catch (error: any) {
@@ -34,6 +35,7 @@ export const AuthService = {
 
     register: async (data: RegisterRequest): Promise<RegisterResponse> => {
         try {
+            console.log("Register request to: ", `${API_URL}/api/auth/register`)
             const response = await axios.post<RegisterResponse>(`${API_URL}/api/auth/register`, data);
             return response.data;
         } catch (error: any) {

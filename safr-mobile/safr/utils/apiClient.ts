@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { Alert } from 'react-native';
 
 const apiClient = axios.create({
-    baseURL: 'http://localhost:8080/api', // TODO: extract this into an environment variable
+    baseURL: 'http://apollo.local/api', // TODO: extract this into an environment variable
 });
 
 // include JWT in all requests
