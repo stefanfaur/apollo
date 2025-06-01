@@ -2,29 +2,24 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <annotationProcessing>
-      <profile default="true" name="Default" enabled="true" />
       <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="apollo" />
+        <module name="media-analysis-service" />
+        <module name="home-service" />
+        <module name="api-gateway" />
+        <module name="file-storage-service" />
         <module name="shared-libs" />
+        <module name="user-service" />
+        <module name="device-service" />
+        <module name="notification-service" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="api-gateway" target="17" />
-      <module name="device-service" target="17" />
-      <module name="file-storage-service" target="17" />
-      <module name="home-service" target="17" />
-      <module name="media-analysis-service" target="17" />
-      <module name="notification-service" target="17" />
-      <module name="user-service" target="17" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="api-gateway" options="-parameters" />
-      <module name="apollo" options="-parameters" />
       <module name="device-service" options="-parameters" />
       <module name="file-storage-service" options="-parameters" />
       <module name="home-service" options="-parameters" />

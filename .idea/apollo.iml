@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
-  <component name="AdditionalModuleElements">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
     <content url="file://$MODULE_DIR$">
-      <excludeFolder url="file://$MODULE_DIR$/apollo-backend/loadtest/venv/bin" />
-      <excludeFolder url="file://$MODULE_DIR$/apollo-backend/loadtest/venv/include" />
-      <excludeFolder url="file://$MODULE_DIR$/apollo-backend/loadtest/venv/lib" />
-      <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/app-example" />
+      <excludeFolder url="file://$MODULE_DIR$/backend-misc/loadtest/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/backend-misc/mosquitto/venv" />
       <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/ios/Pods" />
       <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/ios/build" />
     </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
