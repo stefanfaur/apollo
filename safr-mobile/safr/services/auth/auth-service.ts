@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-// TODO: extract this to a config file
-const API_URL = 'http://apollo.local';
+import { API_CONFIG } from '../../constants/config';
 
 export interface LoginRequest {
     username: string;
@@ -25,8 +23,8 @@ export interface RegisterResponse {
 export const AuthService = {
     login: async (data: LoginRequest): Promise<LoginResponse> => {
         try {
-            console.log("Register request to: ", `${API_URL}/api/auth/login`)
-            const response = await axios.post<LoginResponse>(`${API_URL}/api/auth/login`, data);
+            console.log("Register request to: ", `${API_CONFIG.BASE_URL}/api/auth/login`)
+            const response = await axios.post<LoginResponse>(`${API_CONFIG.BASE_URL}/api/auth/login`, data);
             return response.data;
         } catch (error: any) {
             throw new Error(error.response?.data || 'Login failed');
@@ -35,8 +33,8 @@ export const AuthService = {
 
     register: async (data: RegisterRequest): Promise<RegisterResponse> => {
         try {
-            console.log("Register request to: ", `${API_URL}/api/auth/register`)
-            const response = await axios.post<RegisterResponse>(`${API_URL}/api/auth/register`, data);
+            console.log("Register request to: ", `${API_CONFIG.BASE_URL}/api/auth/register`)
+            const response = await axios.post<RegisterResponse>(`${API_CONFIG.BASE_URL}/api/auth/register`, data);
             return response.data;
         } catch (error: any) {
             throw new Error(error.response?.data || 'Registration failed');
@@ -46,7 +44,7 @@ export const AuthService = {
     oauth2Login: async (authorizationCode: string): Promise<LoginResponse> => {
         try {
             const response = await axios.post<LoginResponse>(
-                `${API_URL}/api/auth/oauth2/login/google?token=${encodeURIComponent(authorizationCode)}`
+                `${API_CONFIG.BASE_URL}/api/auth/oauth2/login/google?token=${encodeURIComponent(authorizationCode)}`
             );
             return response.data;
         } catch (error: any) {

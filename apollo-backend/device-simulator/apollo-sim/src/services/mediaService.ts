@@ -1,11 +1,10 @@
 import axios from 'axios';
-
-const API_URL = 'http://apollo.local';
+import { API_CONFIG } from '../config';
 
 export async function uploadMedia(file: File): Promise<string> {
   try {
     // Get presigned URL
-    const presignedResponse = await axios.get(`${API_URL}/api/minio/presigned-url`, {
+    const presignedResponse = await axios.get(`${API_CONFIG.BASE_URL}/api/minio/presigned-url`, {
       params: {
         filename: file.name
       }

@@ -2,9 +2,10 @@ import axios from 'axios';
 import { getToken, deleteToken } from './secureStore';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
+import { API_CONFIG } from '../constants/config';
 
 const apiClient = axios.create({
-    baseURL: 'http://apollo.local/api', // TODO: extract this into an environment variable
+    baseURL: API_CONFIG.API_URL,
 });
 
 // include JWT in all requests
