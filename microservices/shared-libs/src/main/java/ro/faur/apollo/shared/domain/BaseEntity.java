@@ -1,9 +1,6 @@
 package ro.faur.apollo.shared.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -27,7 +24,13 @@ public class BaseEntity {
     @PrePersist
     public void prePersist() {
         this.uuid = UUID.randomUUID().toString();
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = this.createdAt != null ?
+                this.createdAt : LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
 
