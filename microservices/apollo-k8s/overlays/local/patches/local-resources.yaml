@@ -12,11 +12,11 @@ spec:
         imagePullPolicy: Never
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
-            cpu: "250m"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
 
 ---
 apiVersion: apps/v1
@@ -33,11 +33,11 @@ spec:
         imagePullPolicy: Never
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
-            cpu: "250m"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
 
 ---
 apiVersion: apps/v1
@@ -54,11 +54,11 @@ spec:
         imagePullPolicy: Never
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
-            cpu: "250m"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
 
 ---
 apiVersion: apps/v1
@@ -75,11 +75,11 @@ spec:
         imagePullPolicy: Never
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
-            cpu: "250m"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
 
 ---
 apiVersion: apps/v1
@@ -96,8 +96,8 @@ spec:
         imagePullPolicy: Never
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
-          limits:
             memory: "512Mi"
-            cpu: "250m" 
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
