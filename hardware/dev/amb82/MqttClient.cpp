@@ -1,13 +1,9 @@
 #include "MqttClient.h"
 #include <ArduinoJson.h>
-#include <FreeRTOS.h>
-#include <task.h>
-#include <semphr.h>
-#include <cmsis_os.h>
-
-// osdep_service.h already provides os_thread_create_arduino declaration
 
 extern const char* MQTT_UNLOCK_TOPIC;
+extern const char* HARDWARE_ID;
+extern const char* DEVICE_TYPE;
 
 MqttClient::MqttClient(const char* mqttBroker, int mqttPort) : client(wifiClient) {
   this->mqttBroker = String(mqttBroker);
@@ -16,8 +12,6 @@ MqttClient::MqttClient(const char* mqttBroker, int mqttPort) : client(wifiClient
   this->lastReconnectAttempt = 0;
   this->lastConnectionAttempt = 0;
   this->reconnectAttempts = 0;
-  this->mutex = xSemaphoreCreateMutex();
-  this->threadId = 0;
   this->_topicsSubscribed = false;
 }
 
@@ -46,16 +40,7 @@ bool MqttClient::begin(const char* clientId) {
   debugPrint("MqttClient: MQTT server configured");
   debugPrintStatus();
   
-  // 1. Create the background worker thread if not started
-  int priority = osPriorityNormal; // defined by Ameba core
-  uint32_t stackSize = 4096; // Increase to avoid stack overflow during MQTT operations
-  threadId = os_thread_create_arduino(reinterpret_cast<void (*)(const void *)>(MqttClient::threadTask), this, priority, stackSize);
-  if (threadId == 0) {
-      debugPrint("MqttClient: ERROR - Failed to create MQTT thread");
-      return false;
-  }
-
-  debugPrint("MqttClient: MQTT background thread started");
+  // No background thread – updates will occur from main loop
   return true;
 }
 
@@ -103,10 +88,14 @@ bool MqttClient::connectToMqttBroker() {
     client.waitForAck(1);
     #endif
     
-    // Send a hello message to confirm connectivity
+    // Send a minimal hello message (hardwareId, deviceType)
     debugPrint("MqttClient: Sending hello message...");
-    bool helloResult = publishNotification("devices/hello", clientId.c_str(), "SYSTEM", 
-                                          "Device connected to MQTT broker", "", "");
+    JsonDocument helloDoc;
+    helloDoc["hardwareId"] = HARDWARE_ID;
+    helloDoc["deviceType"] = DEVICE_TYPE;
+    String helloPayload;
+    serializeJson(helloDoc, helloPayload);
+    bool helloResult = client.publish("devices/hello", helloPayload.c_str());
     if (helloResult) {
       debugPrint("MqttClient: Hello message sent successfully");
     } else {
@@ -160,18 +149,18 @@ bool MqttClient::connectToMqttBroker() {
 }
 
 bool MqttClient::subscribe(const char* topic) {
-  if (mutex) {
-      xSemaphoreTake(mutex, portMAX_DELAY);
-  }
   debugPrint("MqttClient: Attempting to subscribe...");
   if (!client.connected()) {
     debugPrint("MqttClient: Cannot subscribe - not connected to broker");
-    if (mutex) xSemaphoreGive(mutex);
     return false;
   }
 
   bool result = client.subscribe(topic);
-  if (mutex) xSemaphoreGive(mutex);
+  if (result) {
+    // Process outgoing subscription packet immediately
+    client.loop();
+    delay(50);
+  }
 
   char buffer[128];
   snprintf(buffer, sizeof(buffer), "MqttClient: %s to subscribe to topic: %s", result ? "Successfully" : "Failed", topic);
@@ -181,10 +170,8 @@ bool MqttClient::subscribe(const char* topic) {
 
 bool MqttClient::publishNotification(const char* topic, const char* hardwareId, const char* eventType, 
                                     const char* description, const char* mediaUrl, const char* timestamp) {
-  if (mutex) xSemaphoreTake(mutex, portMAX_DELAY);
   if (!client.connected()) {
     debugPrint("MqttClient: Cannot publish - not connected to broker");
-    if (mutex) xSemaphoreGive(mutex);
     return false;
   }
   
@@ -203,12 +190,20 @@ bool MqttClient::publishNotification(const char* topic, const char* hardwareId, 
   debugPrint(buffer);
   
   bool result = client.publish(topic, message.c_str());
+  if (result) {
+    // Ensure message is actually placed on the wire before leaving critical section
+    client.loop();
+    delay(50);
+  } else {
+    debugPrint("MqttClient: client.publish() returned false immediately.");
+    debugPrintStatus();
+  }
+  
   if (!result) {
     debugPrint("MqttClient: Failed to publish message");
     debugPrintStatus();
   }
   
-  if (mutex) xSemaphoreGive(mutex);
   return result;
 }
 
@@ -271,19 +266,11 @@ void MqttClient::update() {
 }
 
 bool MqttClient::isConnected() {
-  bool status;
-  if (mutex) xSemaphoreTake(mutex, portMAX_DELAY);
-  status = client.connected();
-  if (mutex) xSemaphoreGive(mutex);
-  return status;
+  return client.connected();
 }
 
 int MqttClient::getState() {
-  int state;
-  if (mutex) xSemaphoreTake(mutex, portMAX_DELAY);
-  state = client.state();
-  if (mutex) xSemaphoreGive(mutex);
-  return state;
+  return client.state();
 }
 
 void MqttClient::debugPrint(const char* message) {
@@ -304,20 +291,5 @@ void MqttClient::debugPrintStatus() {
     snprintf(buffer, sizeof(buffer), "MqttClient: WiFi IP: %d.%d.%d.%d, RSSI: %ld dBm", 
              ip[0], ip[1], ip[2], ip[3], WiFi.RSSI());
     debugPrint(buffer);
-  }
-}
-
-void MqttClient::threadTask(void* arg) {
-  MqttClient* self = static_cast<MqttClient*>(arg);
-  while (true) {
-      // Protect the client while updating
-      if (self->mutex) {
-          xSemaphoreTake(self->mutex, portMAX_DELAY);
-      }
-      self->update();
-      if (self->mutex) {
-          xSemaphoreGive(self->mutex);
-      }
-      vTaskDelay(pdMS_TO_TICKS(20));
   }
 } 

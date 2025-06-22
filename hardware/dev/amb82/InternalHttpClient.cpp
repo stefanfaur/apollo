@@ -116,21 +116,66 @@ bool InternalHttpClient::uploadFile(const String& filePath, AmebaFatFS& fs) {
   if (wifiClient.connect(minioHost.c_str(), minioPort)) {
     Serial.println("Connected to server, sending HTTP headers");
     
-    // Send HTTP PUT request
-    wifiClient.print("PUT ");
-    wifiClient.print(path);
-    wifiClient.println(" HTTP/1.1");
+    // --- Print and send HTTP PUT request line ---
+    String requestLine = String("PUT ") + path + " HTTP/1.1";
+    wifiClient.println(requestLine);
+    Serial.println(requestLine);
     
-    // Send headers
-    wifiClient.print("Host: ");
-    wifiClient.print(minioHost);
-    wifiClient.print(":");
-    wifiClient.println(minioPort);
-    wifiClient.println("Content-Type: application/octet-stream");
-    wifiClient.print("Content-Length: ");
-    wifiClient.println(fileSize);
-    wifiClient.println("Connection: close");
+    // Lambda to send header and mirror to Serial for debugging
+    auto sendHeader = [&](const String& header) {
+      wifiClient.println(header);
+      Serial.println(header);
+    };
+    
+    // --- Send headers ---
+    sendHeader(String("Host: ") + minioHost + ":" + String(minioPort));
+    sendHeader("Content-Type: application/octet-stream");
+    sendHeader(String("Content-Length: ") + String(fileSize));
+    sendHeader("Expect: 100-continue"); // Request early approval to send body
+    sendHeader("Connection: close");
     wifiClient.println(); // End of headers
+    Serial.println(); // Mirror blank line delimiters
+
+    // --- Wait briefly for a 100-continue or any early server response ---
+    unsigned long headerWaitStart = millis();
+    while (!wifiClient.available() && (millis() - headerWaitStart < 3000)) {
+      delay(10);
+    }
+    if (wifiClient.available()) {
+      String earlyResp = wifiClient.readStringUntil('\n');
+      Serial.print("[Handshake] ");
+      Serial.println(earlyResp);
+      // If server sends 100 Continue we proceed, otherwise we keep the line for later processing
+      
+      // Abort early if the server immediately returned an error (e.g., 4xx or 5xx)
+      if (earlyResp.startsWith("HTTP/1.1 4") || earlyResp.startsWith("HTTP/1.1 5")) {
+        Serial.println("Server rejected request during handshake. Aborting upload.");
+        wifiClient.stop();
+        file.close();
+        uploadInProgress = false;
+        return false;
+      }
+    }
+    
+    // Helper to dump any available server data (max 512 bytes) for debugging
+    auto dumpServerResponse = [&](const char* tag) {
+      int avail = wifiClient.available();
+      if (avail > 0) {
+        Serial.print("[Debug] Server responded during ");
+        Serial.println(tag);
+        char tmpBuf[513];
+        int toRead = (avail > 512) ? 512 : avail;
+        int actuallyRead = wifiClient.read(reinterpret_cast<uint8_t*>(tmpBuf), toRead);
+        if (actuallyRead > 0) {
+          tmpBuf[actuallyRead] = '\0';
+          Serial.print(tmpBuf);
+        }
+        Serial.println();
+      }
+    };
+    
+    // --- Detect early server response after headers ---
+    dumpServerResponse("header phase");
     
     // Send the file content in chunks
     const size_t bufferSize = 1024; // Larger buffer for performance
@@ -156,6 +201,7 @@ bool InternalHttpClient::uploadFile(const String& filePath, AmebaFatFS& fs) {
           // Check if still connected before attempting to write
           if (!wifiClient.connected()) {
             Serial.println("Error: WiFiClient disconnected before write operation");
+            dumpServerResponse("premature disconnect");
             uploadFailed = true;
             break;
           }
@@ -177,6 +223,7 @@ bool InternalHttpClient::uploadFile(const String& filePath, AmebaFatFS& fs) {
         // Check if all bytes were sent for this chunk
         if (bytesSent < bytesRead) {
           Serial.println("Failed to send complete chunk after retries");
+          dumpServerResponse("chunk send failure");
           uploadFailed = true;
           break;
         }
@@ -197,6 +244,7 @@ bool InternalHttpClient::uploadFile(const String& filePath, AmebaFatFS& fs) {
       // Check for total upload timeout (10 minutes for large videos)
       if ((millis() - uploadStartTime) > 600000) {
         Serial.println("Upload operation timed out after 10 minutes");
+        dumpServerResponse("timeout");
         uploadFailed = true;
         break;
       }
@@ -214,34 +262,37 @@ bool InternalHttpClient::uploadFile(const String& filePath, AmebaFatFS& fs) {
       Serial.println("Waiting for server response...");
       unsigned long timeout = millis();
       bool responseReceived = false;
-      String statusLine = "";
       int statusCode = 0;
       
       while (millis() - timeout < 20000) { // 20 seconds for response
         if (wifiClient.available()) {
-          if (!responseReceived) {
-            // Read status line
-            statusLine = wifiClient.readStringUntil('\n');
-            Serial.println("Response: " + statusLine);
-            
-            // Parse status code
-            int statusCodeStartPos = statusLine.indexOf(' ') + 1;
-            int statusCodeEndPos = statusLine.indexOf(' ', statusCodeStartPos);
-            if (statusCodeStartPos > 0 && statusCodeEndPos > statusCodeStartPos) {
-              statusCode = statusLine.substring(statusCodeStartPos, statusCodeEndPos).toInt();
+          // Read a complete line (up to CR/LF)
+          String line = wifiClient.readStringUntil('\n');
+          line.trim();
+          Serial.println("Response: " + line);
+
+          // Ignore leading blank lines before status line arrives
+          if (line.length() == 0 && !responseReceived) {
+            continue;
+          }
+
+          // Capture the status line once
+          if (!responseReceived && line.startsWith("HTTP/")) {
+            int firstSpace = line.indexOf(' ');
+            int secondSpace = line.indexOf(' ', firstSpace + 1);
+            if (firstSpace > 0 && secondSpace > firstSpace) {
+              statusCode = line.substring(firstSpace + 1, secondSpace).toInt();
               Serial.print("Status code: ");
               Serial.println(statusCode);
               responseReceived = true;
             } else {
-              Serial.println("Failed to parse status code from: " + statusLine);
+              Serial.println("Failed to parse status code from: " + line);
             }
+            continue; // Go read next header line
           }
-          
-          // Read a line at a time
-          String line = wifiClient.readStringUntil('\n');
-          
-          if (line == "\r" || line.length() == 0) {
-            // End of headers, check status code
+
+          // After status line received, an empty line marks end of headers
+          if (responseReceived && line.length() == 0) {
             if (statusCode == 200 || statusCode == 201) {
               lastUploadedUrl = "http://" + minioHost + ":" + String(minioPort) + path;
               success = true;
@@ -253,7 +304,7 @@ bool InternalHttpClient::uploadFile(const String& filePath, AmebaFatFS& fs) {
             break;
           }
         }
-        
+
         // Small delay to avoid CPU hogging in the loop
         delay(10);
       }

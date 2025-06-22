@@ -154,6 +154,10 @@ bool VideoHandler::startRecording(unsigned long durationMs, bool shouldUpload) {
   // Reset all stream connections to ensure clean state
   resetStreamConnections();
   
+  // --- NEW: ensure camera hardware is fully initialized each recording cycle ---
+  Camera.videoInit();
+  delay(200);
+  
   // Convert duration from milliseconds to seconds for MP4Recording
   int durationSeconds = durationMs / 1000;
   if (durationSeconds < 1) {
@@ -277,6 +281,11 @@ void VideoHandler::stopRecording() {
   Serial.println("Stopping Camera channel...");
   Camera.channelEnd(VIDEO_CHANNEL);
   delay(500); // Increased delay after stopping camera channel
+
+  // --- NEW: fully de-initialize camera hardware to avoid stale state ---
+  Serial.println("De-initializing camera hardware...");
+  Camera.videoDeinit();
+  delay(500);
 
   Serial.println("Stopping audio stream (Audio -> AAC)...");
   if (audioStreamer != nullptr) {

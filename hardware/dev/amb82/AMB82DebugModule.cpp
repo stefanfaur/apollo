@@ -17,6 +17,7 @@ const AMB82DebugModule::Command AMB82DebugModule::COMMANDS[] = {
   {"stop", "Stop video recording", &AMB82DebugModule::cmdStopVideo},
   {"wifi", "Test WiFi connection (usage: wifi [ssid] [password])", &AMB82DebugModule::cmdWifiTest},
   {"mqtt", "Test MQTT connection (usage: mqtt [broker] [port])", &AMB82DebugModule::cmdMqttTest},
+  {"mqttpub", "Publish test message to test/test topic", &AMB82DebugModule::cmdMqttPubTest},
   {"minio", "Test MinIO access (usage: minio [host] [port] [bucket])", &AMB82DebugModule::cmdMinioTest},
   {"msg", "Send a message to STM32 (usage: msg [cmd] [data])", &AMB82DebugModule::cmdSendMessage},
   {"curl", "Test HTTP request (usage: curl [url])", &AMB82DebugModule::cmdCurlTest},
@@ -465,6 +466,24 @@ DebugModule::CommandResult AMB82DebugModule::cmdMqttTest(const char* args) {
     }
   } else {
     respond("Failed to configure MQTT client");
+    return CMD_ERROR;
+  }
+}
+
+DebugModule::CommandResult AMB82DebugModule::cmdMqttPubTest(const char* args) {
+  const char* topic = "test/test";
+  if (!_mqttClient.isConnected()) {
+    respond("MQTT client is not connected. Configure/connect first with 'mqtt' command");
+    return CMD_ERROR;
+  }
+
+  // Publish a simple JSON debug message
+  bool result = _mqttClient.publishNotification(topic, "AMB82_DEBUG", "DEBUG", "MQTT publish test", "", "");
+  if (result) {
+    respond("Test message published to test/test topic");
+    return CMD_SUCCESS;
+  } else {
+    respond("Failed to publish test message");
     return CMD_ERROR;
   }
 }

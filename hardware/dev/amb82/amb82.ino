@@ -28,6 +28,7 @@ const char* MQTT_ENROLL_START_TOPIC = "doorlock/1/enroll/start";
 const char* MQTT_ENROLL_STATUS_TOPIC = "doorlock/1/enroll/status";
 const char* MQTT_EVENT_TOPIC = "doorlock/1/event";
 const char* HARDWARE_ID = "AMB82_001";
+const char* DEVICE_TYPE = "AMB82";  // Global constant identifying board type
 const char* MQTT_CLIENT_ID = HARDWARE_ID;
 
 // State variables
@@ -259,11 +260,11 @@ void loop() {
     return; // Skip normal loop operations while in config mode
   }
   
-  // Normal operation mode
-  // MQTT updates are now handled in a dedicated background thread
-  // Otherwise we have problems because the PubSubClient is inherently blocking
-  
-  // Topic subscription is now handled internally by the MQTT client thread
+  // --- NORMAL OPERATION MODE ---
+  // MQTT updates are now handled directly in the main loop (non-blocking)
+  mqttClient.update();
+
+  // Topic subscription is handled internally by the mqttClient instance
   
   // Update other modules
   videoHandler.update();

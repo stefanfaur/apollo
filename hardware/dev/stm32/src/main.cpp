@@ -16,8 +16,9 @@ void sendStatusMessage(uint8_t command, uint8_t* payload, uint8_t length);
 // Pin definitions
 #define LED_PIN           PC13  // Built-in LED on board
 #define LOCK_PIN          PB12
-#define MOTION_SENSOR_PIN PA0
-#define DOOR_SENSOR_PIN   PA1
+#define MOTION_SENSOR_PIN  PA0
+#define DOOR_SENSOR1_PIN   PA1  // Frame reed switch
+#define DOOR_SENSOR2_PIN   PA4  // Handle reed switch
 
 // Module instances
 STM32DebugModule debugModule;
@@ -74,8 +75,9 @@ void setup() {
   sensorManager.begin();
   
   // Add sensors to manager
-  sensorManager.addSensor(0, MOTION_SENSOR_PIN, INPUT);      // Motion sensor
-  sensorManager.addSensor(1, DOOR_SENSOR_PIN, INPUT_PULLUP); // Door sensor with pullup
+  sensorManager.addSensor(0, MOTION_SENSOR_PIN, INPUT);        // PIR motion sensor (analog output)
+  sensorManager.addSensor(1, DOOR_SENSOR1_PIN, INPUT_PULLUP);  // Door sensor #1 (reed switch)
+  sensorManager.addSensor(2, DOOR_SENSOR2_PIN, INPUT_PULLUP);  // Door sensor #2 (reed switch)
   
   debug_println("STM32 board initialized. Starting main loop...");
   debugModule.log("System initialized and ready");
@@ -147,41 +149,70 @@ void handleUnlockCommand() {
 }
 
 void checkSensors() {
-  // Check motion sensor
+  /********************
+   * Motion sensor
+   *******************/
+  static bool prevMotionActive = false;
   int motionValue = sensorManager.readSensor(0);
-  if (motionValue > 500) {  // Threshold for motion detection
-    debugModule.log("Motion detected");
-    
+  bool motionActive = motionValue > 500;  // Threshold for motion detection (tune as required)
+
+  if (motionActive && !prevMotionActive) {
+    debugModule.log("Motion detected (PIR)");
+
     // Send motion event to AMB82
     uint8_t payload[3] = {
       0x01,  // Event type: motion detected
-      (uint8_t)(motionValue >> 8),   // High byte
+      (uint8_t)(motionValue >> 8),   // High byte (raw value for debugging)
       (uint8_t)(motionValue & 0xFF)  // Low byte
     };
     sendMessage(Serial2, CMD_SENSOR_EVENT, payload, 3);
-    
+
     // Request video recording start
     uint8_t emptyPayload[1] = {0};
     sendMessage(Serial2, CMD_START_VIDEO, emptyPayload, 0);
   }
-  
-  // Check door sensor
-  int doorValue = sensorManager.readSensor(1);
-  if (doorValue == LOW) {  // Door open (LOW when using INPUT_PULLUP)
-    debugModule.log("Door open detected");
-    
-    // Send door event to AMB82
+  prevMotionActive = motionActive;
+
+  /********************
+   * Door sensors (reed switches)
+   *******************/
+  static int prevDoor1State = HIGH;
+  static int prevDoor2State = HIGH;
+
+  int door1State = sensorManager.readSensor(1);
+  int door2State = sensorManager.readSensor(2);
+
+  // Door 1
+  if (door1State == LOW && prevDoor1State == HIGH) { // transition: closed -> open
+    debugModule.log("Door 1 opened");
+
     uint8_t payload[3] = {
-      0x02,  // Event type: door opened
-      0x00,  // High byte
-      0x01   // Low byte
+      0x02,  // Event type: door1 opened
+      0x00,
+      0x01
     };
     sendMessage(Serial2, CMD_SENSOR_EVENT, payload, 3);
-    
-    // Request video recording start
+
     uint8_t emptyPayload[1] = {0};
     sendMessage(Serial2, CMD_START_VIDEO, emptyPayload, 0);
   }
+  prevDoor1State = door1State;
+
+  // Door 2
+  if (door2State == LOW && prevDoor2State == HIGH) { // transition: closed -> open
+    debugModule.log("Door 2 opened");
+
+    uint8_t payload[3] = {
+      0x03,  // Event type: door2 opened
+      0x00,
+      0x01
+    };
+    sendMessage(Serial2, CMD_SENSOR_EVENT, payload, 3);
+
+    uint8_t emptyPayload[1] = {0};
+    sendMessage(Serial2, CMD_START_VIDEO, emptyPayload, 0);
+  }
+  prevDoor2State = door2State;
 }
 
 void sendSensorData(int sensorId, int value) {

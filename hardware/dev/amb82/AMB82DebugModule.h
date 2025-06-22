@@ -70,6 +70,7 @@ private:
   CommandResult cmdReset(const char* args);
   CommandResult cmdWifiTest(const char* args);
   CommandResult cmdMqttTest(const char* args);
+  CommandResult cmdMqttPubTest(const char* args);
   CommandResult cmdMinioTest(const char* args);
   CommandResult cmdSendMessage(const char* args);
   CommandResult cmdCurlTest(const char* args);

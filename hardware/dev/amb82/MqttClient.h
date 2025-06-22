@@ -4,17 +4,12 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include <FreeRTOS.h>
-#include <semphr.h>
-
-// Ameba OS helper
-#include "osdep_service.h"
 
 class MqttClient {
 public:
   MqttClient(const char* mqttBroker, int mqttPort);
   
-  // Initialize MQTT client with client ID and start background thread
+  // Initialize MQTT client with client ID (no background thread)
   bool begin(const char* clientId);
   
   // Set the callback function for incoming messages
@@ -58,11 +53,6 @@ private:
   static const unsigned long RECONNECT_INTERVAL = 15000; // 15 seconds
   static const int MAX_RECONNECT_ATTEMPTS = 3;
   static const unsigned long CONNECT_TIMEOUT_MS = 1000; // Max time (ms) we allow connect() to block
-  
-  // Thread/mutex
-  SemaphoreHandle_t mutex;
-  uint32_t threadId;
-  static void threadTask(void* arg);
   
   // Internal methods
   bool connectToMqttBroker();
