@@ -1,11 +1,17 @@
 #include <Arduino.h>
 #include "MessageProtocol.h"
 #include "STM32DebugModule.h"
+#include "debug_serial.h"
+#include "fingerprint_sensor.h"
 #include "LockController.h"
 #include "SensorManager.h"
+#include "Buzzer.h"
 
-// Define Serial2 for UART2 communication
+// Define Serial2 for UART2 communication to AMB82
 HardwareSerial Serial2(PA3, PA2);
+
+// Forward declaration for status helper
+void sendStatusMessage(uint8_t command, uint8_t* payload, uint8_t length);
 
 // Pin definitions
 #define LED_PIN           PC13  // Built-in LED on board
@@ -17,6 +23,8 @@ HardwareSerial Serial2(PA3, PA2);
 STM32DebugModule debugModule;
 LockController lockController(LOCK_PIN);
 SensorManager sensorManager;
+FingerprintSensor fingerprintSensor(&Serial); // Use default Serial (USART1)
+Buzzer buzzer(PB10); // Passive buzzer
 
 // Timestamp tracking
 unsigned long lastMotionCheck = 0;
@@ -30,15 +38,19 @@ void checkSensors();
 void sendSensorData(int sensorId, int value);
 
 void setup() {
-  // Initialize Serial for debugging
-  Serial.begin(115200);
+  // Initialize Software Debug Serial first
+  debug_serial_init();
+  debug_println("STM32 board initializing...");
+
+  // Initialise hardware Serial used for fingerprint sensor
+  Serial.begin(57600);
   delay(100);
-  Serial.println("STM32 board initializing...");
+  debug_println("Serial (Fingerprint) initialized");
 
   // Initialize Serial2 to communicate with the AMB82 board
   Serial2.begin(9600);
   delay(100);
-  Serial.println("Serial2 initialized for communication with AMB82");
+  debug_println("Serial2 initialized for communication with AMB82");
   
   // Initialize built-in LED
   pinMode(LED_PIN, OUTPUT);
@@ -46,6 +58,16 @@ void setup() {
   
   // Initialize Debug Module
   debugModule.begin();
+  
+  // Initialize Buzzer
+  buzzer.begin();
+  
+  // Initialize fingerprint sensor
+  if (fingerprintSensor.begin()) {
+    debug_println("Fingerprint sensor detected.");
+  } else {
+    debug_println("ERROR: No fingerprint sensor found!");
+  }
   
   // Initialize other components
   lockController.begin();
@@ -55,7 +77,7 @@ void setup() {
   sensorManager.addSensor(0, MOTION_SENSOR_PIN, INPUT);      // Motion sensor
   sensorManager.addSensor(1, DOOR_SENSOR_PIN, INPUT_PULLUP); // Door sensor with pullup
   
-  Serial.println("STM32 board initialized. Starting main loop...");
+  debug_println("STM32 board initialized. Starting main loop...");
   debugModule.log("System initialized and ready");
 }
 
@@ -63,6 +85,7 @@ void loop() {
   // Update modules
   debugModule.update();
   lockController.update();
+  fingerprintSensor.update();
   
   // Check sensors periodically
   unsigned long currentMillis = millis();
@@ -89,9 +112,17 @@ void loop() {
           debugModule.log("Acknowledgment received from AMB82");
           break;
           
+        case CMD_ENROLL_START:
+          if (incoming.length == 1) {
+            uint8_t eid = incoming.payload[0];
+            debugModule.log("Enroll start received");
+            fingerprintSensor.startEnrollment(eid);
+          }
+          break;
+          
         default:
-          Serial.print("Received unhandled command: 0x");
-          Serial.println(incoming.command, HEX);
+          get_debug_serial().print("Received unhandled command: 0x");
+          get_debug_serial().println(incoming.command, HEX);
           break;
       }
     }
@@ -102,13 +133,13 @@ void loop() {
 }
 
 void handleUnlockCommand() {
-  Serial.println("Unlock command received, activating lock");
+  debug_println("Unlock command received, activating lock");
   
   // Activate the door lock
   lockController.unlock(3000);  // Unlock for 3 seconds
   
   // Turn on LED to indicate unlock
-  digitalWrite(LED_PIN, LOW);  // LED on (active LOW)
+  digitalWrite(LED_PIN, HIGH);  // LED on 
   
   // Send acknowledgment back to AMB82
   uint8_t emptyPayload[1] = {0};
@@ -160,4 +191,9 @@ void sendSensorData(int sensorId, int value) {
     (uint8_t)(value & 0xFF)  // Low byte
   };
   sendMessage(Serial2, CMD_SENSOR_DATA, payload, 3);
+}
+
+// Helper to send status back to AMB82
+void sendStatusMessage(uint8_t command, uint8_t* payload, uint8_t length) {
+  sendMessage(Serial2, command, payload, length);
 }

@@ -14,6 +14,11 @@ enum Command {
   CMD_MQTT_MSG    = 0x05,
   CMD_UNLOCK      = 0x06,
   CMD_SENSOR_EVENT = 0x07,
+  CMD_ENROLL_START   = 0x08,
+  CMD_ENROLL_SUCCESS = 0x50,
+  CMD_ENROLL_FAILURE = 0x51,
+  CMD_UNLOCK_FP      = 0x52,
+  CMD_PROMPT_USER    = 0x53,
 };
 
 struct Message {

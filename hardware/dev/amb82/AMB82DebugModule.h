@@ -76,6 +76,7 @@ private:
   CommandResult cmdSystemInfo(const char* args);
   CommandResult cmdFileSystemTest(const char* args);
   CommandResult cmdClearWiFiCredentials(const char* args);
+  CommandResult cmdFingerprintEnroll(const char* args);
   
   // Command definitions table
   static const Command COMMANDS[];

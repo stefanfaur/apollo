@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "debug_serial.h"
 
 // Define min function if not available
 #ifndef min
@@ -32,8 +33,8 @@ STM32DebugModule::STM32DebugModule() {
 }
 
 bool STM32DebugModule::begin() {
-  Serial.println("STM32 Debug Module initialized");
-  Serial.println("Type 'help' for available commands");
+  debug_println("STM32 Debug Module initialized");
+  debug_println("Type 'help' for available commands");
   enabled = true;
   return true;
 }
@@ -44,24 +45,24 @@ void STM32DebugModule::update() {
   }
   
   // Process any pending serial data
-  while (Serial.available() > 0) {
-    char c = Serial.read();
+  while (get_debug_serial().available() > 0) {
+    char c = get_debug_serial().read();
     
     // Handle backspace/delete
     if (c == '\b' || c == 127) {
       if (commandLength > 0) {
         commandLength--;
-        Serial.print("\b \b"); // Erase the character on the console
+        get_debug_serial().print("\b \b"); // Erase the character on the console
       }
       continue;
     }
     
     // Echo character back to console
-    Serial.write(c);
+    get_debug_serial().write(c);
     
     // Process on newline
     if (c == '\n' || c == '\r') {
-      Serial.println();
+      get_debug_serial().println();
       
       // Null terminate the command and process it
       if (commandLength > 0) {
@@ -71,7 +72,7 @@ void STM32DebugModule::update() {
       
       // Reset the buffer
       commandLength = 0;
-      Serial.print("> "); // Print prompt
+      get_debug_serial().print("> "); // Print prompt
       continue;
     }
     
@@ -84,16 +85,16 @@ void STM32DebugModule::update() {
 }
 
 void STM32DebugModule::respond(const char* message) {
-  Serial.println(message);
+  debug_println(message);
 }
 
 void STM32DebugModule::setEnabled(bool isEnabled) {
   enabled = isEnabled;
   if (enabled) {
-    Serial.println("Debug mode enabled");
-    Serial.print("> ");
+    debug_println("Debug mode enabled");
+    debug_print("> ");
   } else {
-    Serial.println("Debug mode disabled");
+    debug_println("Debug mode disabled");
   }
 }
 
@@ -103,8 +104,8 @@ bool STM32DebugModule::isEnabled() {
 
 void STM32DebugModule::log(const char* message) {
   if (enabled) {
-    Serial.print("[DEBUG] ");
-    Serial.println(message);
+    debug_print("[DEBUG] ");
+    debug_println(message);
   }
 }
 
@@ -439,14 +440,14 @@ void STM32DebugModule::notifyMessageReceived(uint8_t command, uint8_t length, ui
   log(logBuffer);
   
   if (length > 0) {
-    Serial.print("[DEBUG] Data: ");
+    get_debug_serial().print("[DEBUG] Data: ");
     for (int i = 0; i < min(length, 8); i++) {  // Show up to 8 bytes
-      Serial.print(payload[i], HEX);
-      Serial.print(" ");
+      get_debug_serial().print(payload[i], HEX);
+      get_debug_serial().print(" ");
     }
     if (length > 8) {
-      Serial.print("...");
+      get_debug_serial().print("...");
     }
-    Serial.println();
+    get_debug_serial().println();
   }
 } 

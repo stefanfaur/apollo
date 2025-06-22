@@ -23,7 +23,8 @@ const AMB82DebugModule::Command AMB82DebugModule::COMMANDS[] = {
   {"sysinfo", "Show system information", &AMB82DebugModule::cmdSystemInfo},
   {"fstest", "Test file system operations", &AMB82DebugModule::cmdFileSystemTest},
   {"reset", "Reset video subsystem", &AMB82DebugModule::cmdReset},
-  {"clearwifi", "Clear stored WiFi credentials", &AMB82DebugModule::cmdClearWiFiCredentials}
+  {"clearwifi", "Clear stored WiFi credentials", &AMB82DebugModule::cmdClearWiFiCredentials},
+  {"fpenroll", "Enroll fingerprint ID (usage: fpenroll [id])", &AMB82DebugModule::cmdFingerprintEnroll}
 };
 
 const int AMB82DebugModule::COMMAND_COUNT = sizeof(COMMANDS) / sizeof(COMMANDS[0]);
@@ -786,4 +787,75 @@ DebugModule::CommandResult AMB82DebugModule::cmdClearWiFiCredentials(const char*
   respond("WiFi credentials cleared successfully");
   respond("Device will start in configuration mode on next restart");
   return CMD_SUCCESS;
+}
+
+DebugModule::CommandResult AMB82DebugModule::cmdFingerprintEnroll(const char* args) {
+  char argBuffer[32];
+  char* idStr = nullptr;
+
+  if (!(args && *args && parseArgs(args, argBuffer, sizeof(argBuffer), 1, &idStr))) {
+    respond("Missing arguments. Usage: fpenroll [id]");
+    return CMD_INVALID_ARGS;
+  }
+
+  int id = atoi(idStr);
+  if (id <= 0 || id >= 128) {
+    respond("Invalid ID. Must be 1-127");
+    return CMD_INVALID_ARGS;
+  }
+
+  // Send enroll start to STM32
+  uint8_t payload[1] = { (uint8_t)id };
+  sendMessage(Serial2, CMD_ENROLL_START, payload, 1);
+
+  char buf[80];
+  snprintf(buf, sizeof(buf), "Enroll command sent for ID %d. Waiting for response...", id);
+  respond(buf);
+
+  unsigned long startTime = millis();
+  const unsigned long timeoutMs = 30000; // 30 seconds
+
+  while (millis() - startTime < timeoutMs) {
+    if (Serial2.available() > 0) {
+      Message msg;
+      if (readMessage(Serial2, msg)) {
+        switch (msg.command) {
+          case CMD_PROMPT_USER: {
+            if (msg.length == 1) {
+              const char* promptStr = "Unknown";
+              switch (msg.payload[0]) {
+                case 0x01: promptStr = "Place finger on sensor"; break;
+                case 0x02: promptStr = "Remove finger"; break;
+                case 0x03: promptStr = "Place same finger again"; break;
+              }
+              respond(promptStr);
+            }
+            break; }
+
+          case CMD_ENROLL_SUCCESS: {
+            if (msg.length == 1) {
+              snprintf(buf, sizeof(buf), "Enroll success! ID %d stored", msg.payload[0]);
+              respond(buf);
+            } else {
+              respond("Enroll success received (no ID)");
+            }
+            return CMD_SUCCESS; }
+
+          case CMD_ENROLL_FAILURE: {
+            if (msg.length == 1) {
+              uint8_t code = msg.payload[0];
+              snprintf(buf, sizeof(buf), "Enroll failed. Error code 0x%02X", code);
+              respond(buf);
+            } else {
+              respond("Enroll failure received (no code)");
+            }
+            return CMD_ERROR; }
+        }
+      }
+    }
+    delay(20); // prevent CPU hog
+  }
+
+  respond("Timeout waiting for enroll result");
+  return CMD_ERROR;
 } 

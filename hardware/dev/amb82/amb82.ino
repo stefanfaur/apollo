@@ -2,6 +2,7 @@
 #include "MessageProtocol.h"
 #include "VideoHandler.h"
 #include "HttpClient.h"
+#include <ArduinoJson.h>
 #include "MqttClient.h"
 #include "EventLogger.h"
 #include "AMB82DebugModule.h"
@@ -23,6 +24,9 @@ const char* MQTT_BROKER = "192.168.2.125";
 const int MQTT_PORT = 1883;
 const char* MQTT_NOTIFICATION_TOPIC = "devices/notifications";
 const char* MQTT_UNLOCK_TOPIC = "devices/commands/unlock";
+const char* MQTT_ENROLL_START_TOPIC = "doorlock/1/enroll/start";
+const char* MQTT_ENROLL_STATUS_TOPIC = "doorlock/1/enroll/status";
+const char* MQTT_EVENT_TOPIC = "doorlock/1/event";
 const char* HARDWARE_ID = "AMB82_001";
 const char* MQTT_CLIENT_ID = HARDWARE_ID;
 
@@ -67,6 +71,26 @@ void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
     // Send the unlock command to the STM32 via Serial2
     uint8_t emptyPayload[1] = {0};
     sendMessage(Serial2, CMD_UNLOCK, emptyPayload, 0);
+  } else if (String(topic) == MQTT_ENROLL_START_TOPIC) {
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, payload, length);
+    if (err) {
+      Serial.print("JSON parse error: ");
+      Serial.println(err.c_str());
+      return;
+    }
+    if (doc.containsKey("user_fp_id")) {
+       uint8_t uid = doc["user_fp_id"];
+       if (uid > 0 && uid < 128) {
+          uint8_t pl[1] = { uid };
+          sendMessage(Serial2, CMD_ENROLL_START, pl, 1);
+          Serial.println("Enroll request forwarded to STM32");
+       } else {
+          Serial.println("Invalid user_fp_id");
+       }
+    } else {
+       Serial.println("Payload missing user_fp_id");
+    }
   }
 }
 
@@ -133,6 +157,8 @@ void setup() {
       if (mqttClient.begin(MQTT_CLIENT_ID)) {
         Serial.println("MQTT client configured successfully");
         debugModule.log("MQTT client configured successfully");
+        // Subscribe to fingerprint enroll topic
+        mqttClient.subscribe(MQTT_ENROLL_START_TOPIC);
       } else {
         Serial.println("Failed to configure MQTT client");
         debugModule.log("Failed to configure MQTT client");
@@ -252,6 +278,18 @@ void loop() {
     Message incoming;
     // Use the MessageProtocol lib to decode a message
     if (readMessage(Serial2, incoming)) {
+      // print message for debugging
+      Serial.print("Received message: ");
+      Serial.println(incoming.command, HEX);
+      Serial.print("Length: ");
+      Serial.println(incoming.length);
+      Serial.print("Payload: ");
+      for (int i = 0; i < incoming.length; i++) {
+        Serial.print(incoming.payload[i], HEX);
+        Serial.print(" ");
+      }
+      Serial.println();
+      
       // Process based on command type
       switch (incoming.command) {
         case CMD_START_VIDEO:
@@ -264,6 +302,37 @@ void loop() {
           
         case CMD_SENSOR_EVENT:
           handleSensorEvent(incoming);
+          break;
+          
+        case CMD_ENROLL_SUCCESS:
+          if (incoming.length == 1) {
+             char desc[64];
+             sprintf(desc, "FP enroll success id %d", incoming.payload[0]);
+             eventLogger.logEvent(0, desc);
+             mqttClient.publishNotification(MQTT_ENROLL_STATUS_TOPIC, HARDWARE_ID, "EnrollSuccess", desc, "", "");
+          }
+          break;
+          
+        case CMD_ENROLL_FAILURE:
+          if (incoming.length == 1) {
+             char desc[64];
+             sprintf(desc, "FP enroll failure code 0x%02X", incoming.payload[0]);
+             eventLogger.logEvent(0, desc);
+             mqttClient.publishNotification(MQTT_ENROLL_STATUS_TOPIC, HARDWARE_ID, "EnrollFailure", desc, "", "");
+          }
+          break;
+          
+        case CMD_UNLOCK_FP:
+          if (incoming.length == 1) {
+             char desc[64];
+             sprintf(desc, "Unlocked by FP id %d", incoming.payload[0]);
+             mqttClient.publishNotification(MQTT_EVENT_TOPIC, HARDWARE_ID, "UnlockedFP", desc, "", "");
+          }
+          break;
+          
+        case CMD_PROMPT_USER:
+          // For now just log
+          eventLogger.logEvent(0, "Prompt user received");
           break;
           
         default:
