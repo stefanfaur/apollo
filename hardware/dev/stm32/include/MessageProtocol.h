@@ -6,6 +6,10 @@
 // ----- Message Protocol Definitions -----
 #define MSG_HEADER 0xAA
 
+#ifndef FP_BAUD
+#define FP_BAUD 57600
+#endif
+
 enum Command {
   CMD_START_VIDEO = 0x01,
   CMD_STOP_VIDEO  = 0x02,

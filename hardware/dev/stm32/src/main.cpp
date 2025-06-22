@@ -44,7 +44,7 @@ void setup() {
   debug_println("STM32 board initializing...");
 
   // Initialise hardware Serial used for fingerprint sensor
-  Serial.begin(57600);
+  Serial.begin(115200);
   delay(100);
   debug_println("Serial (Fingerprint) initialized");
 
