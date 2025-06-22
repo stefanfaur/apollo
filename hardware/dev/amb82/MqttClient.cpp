@@ -1,5 +1,13 @@
 #include "MqttClient.h"
 #include <ArduinoJson.h>
+#include <FreeRTOS.h>
+#include <task.h>
+#include <semphr.h>
+#include <cmsis_os.h>
+
+// osdep_service.h already provides os_thread_create_arduino declaration
+
+extern const char* MQTT_UNLOCK_TOPIC;
 
 MqttClient::MqttClient(const char* mqttBroker, int mqttPort) : client(wifiClient) {
   this->mqttBroker = String(mqttBroker);
@@ -8,6 +16,9 @@ MqttClient::MqttClient(const char* mqttBroker, int mqttPort) : client(wifiClient
   this->lastReconnectAttempt = 0;
   this->lastConnectionAttempt = 0;
   this->reconnectAttempts = 0;
+  this->mutex = xSemaphoreCreateMutex();
+  this->threadId = 0;
+  this->_topicsSubscribed = false;
 }
 
 bool MqttClient::begin(const char* clientId) {
@@ -17,14 +28,14 @@ bool MqttClient::begin(const char* clientId) {
   
   // !!!!! Configure WiFiClient for non-blocking mode with timeout
   wifiClient.setNonBlockingMode();
-  wifiClient.setRecvTimeout(3000);
+  wifiClient.setRecvTimeout(CONNECT_TIMEOUT_MS);
   
   debugPrint("MqttClient: WiFiClient configured for non-blocking mode");
   
   // Configure MQTT client
   client.setServer(mqttBroker.c_str(), mqttPort);
   client.setKeepAlive(30);
-  client.setSocketTimeout(5);
+  client.setSocketTimeout((CONNECT_TIMEOUT_MS + 999) / 1000);
   
   // AMB82-specific: Disable waiting for ACK to prevent blocking
   #ifdef MQTT_PCN006_SUPPORT_WAIT_FOR_ACK
@@ -35,6 +46,16 @@ bool MqttClient::begin(const char* clientId) {
   debugPrint("MqttClient: MQTT server configured");
   debugPrintStatus();
   
+  // 1. Create the background worker thread if not started
+  int priority = osPriorityNormal; // defined by Ameba core
+  uint32_t stackSize = 4096; // Increase to avoid stack overflow during MQTT operations
+  threadId = os_thread_create_arduino(reinterpret_cast<void (*)(const void *)>(MqttClient::threadTask), this, priority, stackSize);
+  if (threadId == 0) {
+      debugPrint("MqttClient: ERROR - Failed to create MQTT thread");
+      return false;
+  }
+
+  debugPrint("MqttClient: MQTT background thread started");
   return true;
 }
 
@@ -54,7 +75,7 @@ bool MqttClient::connectToMqttBroker() {
   
   // Ensure WiFiClient is properly configured for non-blocking operation
   wifiClient.setNonBlockingMode();
-  wifiClient.setRecvTimeout(3000);
+  wifiClient.setRecvTimeout(CONNECT_TIMEOUT_MS);
   
   char buffer[128];
   snprintf(buffer, sizeof(buffer), "MqttClient: Connecting to %s:%d with client ID: %s", 
@@ -139,31 +160,31 @@ bool MqttClient::connectToMqttBroker() {
 }
 
 bool MqttClient::subscribe(const char* topic) {
+  if (mutex) {
+      xSemaphoreTake(mutex, portMAX_DELAY);
+  }
   debugPrint("MqttClient: Attempting to subscribe...");
-  
-  if (!isConnected()) {
+  if (!client.connected()) {
     debugPrint("MqttClient: Cannot subscribe - not connected to broker");
+    if (mutex) xSemaphoreGive(mutex);
     return false;
   }
-  
+
   bool result = client.subscribe(topic);
-  if (result) {
-    char buffer[128];
-    snprintf(buffer, sizeof(buffer), "MqttClient: Successfully subscribed to topic: %s", topic);
-    debugPrint(buffer);
-  } else {
-    char buffer[128];
-    snprintf(buffer, sizeof(buffer), "MqttClient: Failed to subscribe to topic: %s", topic);
-    debugPrint(buffer);
-  }
-  
+  if (mutex) xSemaphoreGive(mutex);
+
+  char buffer[128];
+  snprintf(buffer, sizeof(buffer), "MqttClient: %s to subscribe to topic: %s", result ? "Successfully" : "Failed", topic);
+  debugPrint(buffer);
   return result;
 }
 
 bool MqttClient::publishNotification(const char* topic, const char* hardwareId, const char* eventType, 
                                     const char* description, const char* mediaUrl, const char* timestamp) {
-  if (!isConnected()) {
+  if (mutex) xSemaphoreTake(mutex, portMAX_DELAY);
+  if (!client.connected()) {
     debugPrint("MqttClient: Cannot publish - not connected to broker");
+    if (mutex) xSemaphoreGive(mutex);
     return false;
   }
   
@@ -187,6 +208,7 @@ bool MqttClient::publishNotification(const char* topic, const char* hardwareId, 
     debugPrintStatus();
   }
   
+  if (mutex) xSemaphoreGive(mutex);
   return result;
 }
 
@@ -212,7 +234,7 @@ void MqttClient::update() {
           
           // Ensure non-blocking mode before reconnection
           wifiClient.setNonBlockingMode();
-          wifiClient.setRecvTimeout(3000);
+          wifiClient.setRecvTimeout(CONNECT_TIMEOUT_MS);
           
           debugPrint("MqttClient: Starting non-blocking reconnection...");
           connectToMqttBroker();
@@ -234,15 +256,34 @@ void MqttClient::update() {
     // Process MQTT messages only if connected
     client.loop();
     connected = true;
+
+    // Ensure we have subscribed to required topics once connected
+    if (!_topicsSubscribed) {
+      debugPrint("MqttClient: Attempting initial topic subscription...");
+      if (client.subscribe(MQTT_UNLOCK_TOPIC)) {
+        debugPrint("MqttClient: Subscribed to unlock topic");
+        _topicsSubscribed = true;
+      } else {
+        debugPrint("MqttClient: Failed to subscribe (will retry)");
+      }
+    }
   }
 }
 
 bool MqttClient::isConnected() {
-  return client.connected();
+  bool status;
+  if (mutex) xSemaphoreTake(mutex, portMAX_DELAY);
+  status = client.connected();
+  if (mutex) xSemaphoreGive(mutex);
+  return status;
 }
 
 int MqttClient::getState() {
-  return client.state();
+  int state;
+  if (mutex) xSemaphoreTake(mutex, portMAX_DELAY);
+  state = client.state();
+  if (mutex) xSemaphoreGive(mutex);
+  return state;
 }
 
 void MqttClient::debugPrint(const char* message) {
@@ -263,5 +304,20 @@ void MqttClient::debugPrintStatus() {
     snprintf(buffer, sizeof(buffer), "MqttClient: WiFi IP: %d.%d.%d.%d, RSSI: %ld dBm", 
              ip[0], ip[1], ip[2], ip[3], WiFi.RSSI());
     debugPrint(buffer);
+  }
+}
+
+void MqttClient::threadTask(void* arg) {
+  MqttClient* self = static_cast<MqttClient*>(arg);
+  while (true) {
+      // Protect the client while updating
+      if (self->mutex) {
+          xSemaphoreTake(self->mutex, portMAX_DELAY);
+      }
+      self->update();
+      if (self->mutex) {
+          xSemaphoreGive(self->mutex);
+      }
+      vTaskDelay(pdMS_TO_TICKS(20));
   }
 } 

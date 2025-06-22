@@ -14,12 +14,12 @@ const char* DEFAULT_WIFI_SSID = "FRAME";
 const char* DEFAULT_WIFI_PASSWORD = "HY04IOABBA8GI";
 
 // MinIO configuration
-const char* MINIO_HOST = "192.168.2.145";
+const char* MINIO_HOST = "192.168.2.125";
 const int MINIO_PORT = 9000;
 const char* MINIO_BUCKET = "apollo-bucket/uploads/";
 
 // MQTT configuration
-const char* MQTT_BROKER = "192.168.2.145";
+const char* MQTT_BROKER = "192.168.2.125";
 const int MQTT_PORT = 1883;
 const char* MQTT_NOTIFICATION_TOPIC = "devices/notifications";
 const char* MQTT_UNLOCK_TOPIC = "devices/commands/unlock";
@@ -234,22 +234,10 @@ void loop() {
   }
   
   // Normal operation mode
-  // First process MQTT updates - keep connection alive
-  mqttClient.update();
+  // MQTT updates are now handled in a dedicated background thread
+  // Otherwise we have problems because the PubSubClient is inherently blocking
   
-  // Subscribe to topics after connection is established (one-time)
-  static bool topicsSubscribed = false;
-  if (!topicsSubscribed && mqttClient.isConnected()) {
-    Serial.println("MQTT connected, attempting to subscribe to topics");
-    if (mqttClient.subscribe(MQTT_UNLOCK_TOPIC)) {
-      Serial.println("Successfully subscribed to unlock topic");
-      debugModule.log("Successfully subscribed to unlock topic");
-      topicsSubscribed = true;
-    } else {
-      Serial.println("Failed to subscribe to unlock topic");
-      debugModule.log("Failed to subscribe to unlock topic");
-    }
-  }
+  // Topic subscription is now handled internally by the MQTT client thread
   
   // Update other modules
   videoHandler.update();
