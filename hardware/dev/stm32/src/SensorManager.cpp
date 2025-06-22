@@ -43,12 +43,6 @@ int SensorManager::readSensor(uint8_t id) {
   // Find the sensor with matching ID
   for (int i = 0; i < _sensorCount; i++) {
     if (_sensors[i].id == id) {
-      // Determine if we should perform a digital or analog read based on
-      // the configured pin mode. Digital reads return a HIGH/LOW value
-      // while analog reads return a 10-/12-bit integer depending on the
-      // MCU.  This simplifies the previous logic by always using
-      // digitalRead for pins configured as INPUT / INPUT_PULLUP and
-      // analogRead otherwise.
 
       if (_sensors[i].mode == INPUT || _sensors[i].mode == INPUT_PULLUP) {
         _sensors[i].lastValue = digitalRead(_sensors[i].pin);

@@ -154,7 +154,7 @@ void checkSensors() {
    *******************/
   static bool prevMotionActive = false;
   int motionValue = sensorManager.readSensor(0);
-  bool motionActive = motionValue > 500;  // Threshold for motion detection (tune as required)
+  bool motionActive = (motionValue == HIGH);  // PIR output is HIGH when motion
 
   if (motionActive && !prevMotionActive) {
     debugModule.log("Motion detected (PIR)");
