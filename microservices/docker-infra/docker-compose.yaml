@@ -5,8 +5,8 @@ services:
     container_name: apollo-postgres
     environment:
       POSTGRES_DB: ${DB_NAME:-apollo_db}
-      POSTGRES_USER: ${DB_USERNAME:-apollo_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-apollo_password}
+      POSTGRES_USER: ${DB_USERNAME:-apollo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-apollo123}
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
@@ -27,6 +27,26 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    networks:
+      - apollo-network
+
+  # Init container to bootstrap the bucket + policy
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    # wait a bit for MinIO to be ready, then:
+    entrypoint: >
+      sh -c "\
+        sleep 10 && \
+        mc alias set local http://minio:9000 \
+          $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} && \
+        mc mb local/apollo-bucket && \
+        mc policy set writeonly local/apollo-bucket \
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-apollo_minio_user}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-apollo_minio_password}
     networks:
       - apollo-network
 
