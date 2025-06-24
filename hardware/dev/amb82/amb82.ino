@@ -28,7 +28,7 @@ const char* MQTT_ENROLL_START_TOPIC = "doorlock/1/enroll/start";
 const char* MQTT_ENROLL_STATUS_TOPIC = "doorlock/1/enroll/status";
 const char* MQTT_EVENT_TOPIC = "doorlock/1/event";
 const char* HARDWARE_ID = "AMB82_001";
-const char* DEVICE_TYPE = "AMB82";  // Global constant identifying board type
+const char* DEVICE_TYPE = "AMB82";  
 const char* MQTT_CLIENT_ID = HARDWARE_ID;
 
 // State variables
@@ -65,10 +65,29 @@ void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
   snprintf(eventDesc, sizeof(eventDesc), "MQTT: %s - %s", topic, message.c_str());
   eventLogger.logEvent(0, eventDesc);
   
-  // Handle unlock command
+  // Handle unlock command (requires matching hardwareId)
   if (String(topic) == MQTT_UNLOCK_TOPIC) {
-    Serial.println("Unlock command received, forwarding to STM32");
-    
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, payload, length);
+    if (err) {
+      Serial.print("JSON parse error (unlock): ");
+      Serial.println(err.c_str());
+      return;
+    }
+
+    // Validate hardwareId
+    if (!doc.containsKey("hardwareId")) {
+      Serial.println("Unlock payload missing hardwareId – ignored.");
+      return;
+    }
+    const char* targetId = doc["hardwareId"];
+    if (strcmp(targetId, HARDWARE_ID) != 0) {
+      Serial.println("Unlock command for different hardwareId – ignored.");
+      return;
+    }
+
+    Serial.println("Unlock command validated, forwarding to STM32");
+
     // Send the unlock command to the STM32 via Serial2
     uint8_t emptyPayload[1] = {0};
     sendMessage(Serial2, CMD_UNLOCK, emptyPayload, 0);
@@ -76,10 +95,22 @@ void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
     JsonDocument doc;
     DeserializationError err = deserializeJson(doc, payload, length);
     if (err) {
-      Serial.print("JSON parse error: ");
+      Serial.print("JSON parse error (enroll): ");
       Serial.println(err.c_str());
       return;
     }
+
+    // Validate hardwareId
+    if (!doc.containsKey("hardwareId")) {
+      Serial.println("Enroll payload missing hardwareId – ignored.");
+      return;
+    }
+    const char* targetId = doc["hardwareId"];
+    if (strcmp(targetId, HARDWARE_ID) != 0) {
+      Serial.println("Enroll command for different hardwareId – ignored.");
+      return;
+    }
+
     if (doc.containsKey("user_fp_id")) {
        uint8_t uid = doc["user_fp_id"];
        if (uid > 0 && uid < 128) {

@@ -130,6 +130,7 @@ void FingerprintSensor::updateMatching() {
             debug_printf("[FP] Match found! ID=%u, confidence=%u\n", finger.fingerID, finger.confidence);
             buzzer.matchSuccess();
             uint8_t payload[] = { (uint8_t)finger.fingerID };
+            debug_println("[FP] Unlocking door due to valid fingerprint match");
             lockController.unlock(3000);
             sendStatusMessage(CMD_UNLOCK_FP, payload, 1);
 
@@ -141,7 +142,11 @@ void FingerprintSensor::updateMatching() {
 
         case MatchState::HANDLE_FAILURE: {
             buzzer.matchFailure();
-            // Optionally you could signal host here that match failed.
+            // Notify host (AMB82) that fingerprint match failed so it can react accordingly.
+            const uint8_t FP_FAILURE_EVENT = 0x05; // Must match EventType::FINGERPRINT_FAILURE on host
+            uint8_t payload[] = { FP_FAILURE_EVENT };
+            sendStatusMessage(CMD_SENSOR_EVENT, payload, 1);
+
             matchState = MatchState::IDLE_POLLING;
             break; }
 

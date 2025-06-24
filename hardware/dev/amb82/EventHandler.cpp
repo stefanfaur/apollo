@@ -55,6 +55,17 @@ void EventHandler::handleEvent(EventType type, int value) {
             }
             break;
 
+        case EventType::FINGERPRINT_FAILURE:
+            Serial.println("Fingerprint authentication failure detected. Starting 5s video recording (via EventHandler).");
+            // Start a 5-second video recording, enable upload
+            if (videoHandler.startRecording(5000, true)) {
+                isWaitingForUpload = true;
+                lastEventType = type;
+            } else {
+                Serial.println("ERROR: Failed to start recording from EventHandler.");
+            }
+            break;
+
         case EventType::UNKNOWN:
         default:
             Serial.println("Received unknown sensor event type (handled by EventHandler).");
@@ -109,9 +120,13 @@ void EventHandler::_uploadAndNotify() {
         extern const char* MQTT_NOTIFICATION_TOPIC;
         extern const char* HARDWARE_ID;
 
+        char timestampBuffer[16];
+        unsigned long now = millis();
+        snprintf(timestampBuffer, sizeof(timestampBuffer), "%lu", now);
+
         // Publish notification via MQTT, including the event type
         if (mqttClient.publishNotification(MQTT_NOTIFICATION_TOPIC, HARDWARE_ID, 
-                                         title.c_str(), message.c_str(), mediaUrl.c_str(), eventTypeStr.c_str())) {
+                                         eventTypeStr.c_str(), message.c_str(), mediaUrl.c_str(), timestampBuffer)) {
             Serial.println("MQTT notification sent successfully (EventHandler).");
         } else {
             Serial.println("Failed to send MQTT notification (EventHandler).");

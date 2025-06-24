@@ -8,6 +8,7 @@ enum class EventType : uint8_t {
     MOTION_DETECTED = 0x01,
     DOOR_OPENED     = 0x02,
     DOOR_OPENED_UNAUTH = 0x04, 
+    FINGERPRINT_FAILURE = 0x05,
     UNKNOWN        = 0xFF  
 };
 

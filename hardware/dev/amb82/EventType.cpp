@@ -8,6 +8,8 @@ String eventTypeToString(EventType type) {
             return "Door opened";
         case EventType::DOOR_OPENED_UNAUTH:
             return "Door opened (Unauthorized)";
+        case EventType::FINGERPRINT_FAILURE:
+            return "Fingerprint authentication failed";
         case EventType::UNKNOWN:
         default:
             return "Unknown event";
