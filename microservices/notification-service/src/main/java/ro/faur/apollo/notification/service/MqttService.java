@@ -18,6 +18,8 @@ import ro.faur.apollo.notification.dto.mqtt.NotificationMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class MqttService {
@@ -53,7 +55,7 @@ public class MqttService {
 
     @PostConstruct
     public void initialize() {
-        this.linkPrefix = "http://" + minioUrl + "/" + minioBucket;
+        this.linkPrefix = minioUrl + "/" + minioBucket;
         try {
             mqttClient = new MqttClient(mqttBrokerUrl, MqttClient.generateClientId(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
@@ -70,6 +72,7 @@ public class MqttService {
     private void subscribeToTopics() throws MqttException {
         mqttClient.subscribe("devices/hello", this::handleHelloMessage);
         mqttClient.subscribe("devices/notifications", this::handleNotificationMessage);
+        mqttClient.subscribe("doorlock/+/enroll/status", this::handleEnrollStatusMessage);
         logger.info("Subscribed to MQTT topics: devices/hello and devices/notifications");
     }
 
@@ -112,18 +115,32 @@ public class MqttService {
 
                 String notificationMessage = notifMsg.getMessage();
 
+                // Analyse media content with AI service, if any
                 if (notifMsg.getMediaUrl() != null) {
                     String mediaUrl = linkPrefix + notifMsg.getMediaUrl();
                     notificationMessage = getMediaAnalysis(mediaUrl);
                 }
 
+                // Map event type coming from device to our internal enum and derive a better title
+                String eventTypeStr = notifMsg.getEventType();
+                NotificationEventType mappedType = mapEventType(eventTypeStr);
+
+
+                String originalTitle = notifMsg.getTitle();
+                String title;
+                if (originalTitle == null || originalTitle.equalsIgnoreCase("Video Recording Alert")) {
+                    title = (eventTypeStr != null && !eventTypeStr.isBlank()) ? capitalize(eventTypeStr) : "Security Event";
+                } else {
+                    title = originalTitle;
+                }
+
                 Notification notification = new Notification();
-                notification.setTitle(notifMsg.getTitle());
+                notification.setTitle(title);
                 notification.setMessage(notificationMessage);
                 if (notifMsg.getMediaUrl() != null) {
                     notification.setMediaUrl(linkPrefix + notifMsg.getMediaUrl());
                 }
-                notification.setType(NotificationEventType.DOORLOCK_MISC);
+                notification.setType(mappedType);
                 notification.setDeviceUuid(deviceUuid);
 
                 notificationService.saveNotification(notification);
@@ -167,5 +184,88 @@ public class MqttService {
             mqttClient.disconnect();
             logger.info("Disconnected from MQTT broker");
         }
+    }
+
+    // Publish enroll start command on behalf of Device Service
+    public void publishEnrollStart(String hardwareId, int userFpId) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("hardwareId", hardwareId);
+        payload.put("user_fp_id", userFpId);
+        try {
+            String json = objectMapper.writeValueAsString(payload);
+            MqttMessage mqttMessage = new MqttMessage(json.getBytes(StandardCharsets.UTF_8));
+            mqttClient.publish("doorlock/1/enroll/start", mqttMessage);
+            logger.info("Published enroll start for hardwareId {} (templateId={})", hardwareId, userFpId);
+        } catch (Exception e) {
+            logger.error("Failed to publish enroll start", e);
+        }
+    }
+
+    private void handleEnrollStatusMessage(String topic, MqttMessage message) {
+        executorService.submit(() -> {
+            try {
+                String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
+                Map<?,?> map = objectMapper.readValue(payload, Map.class);
+                String hardwareId = (String) map.get("hardwareId");
+                String eventType = (String) map.get("eventType");
+                if (hardwareId == null || eventType == null) return;
+
+                String deviceUuid = getDeviceUuidByHardwareId(hardwareId);
+                if (deviceUuid == null) return;
+
+                Map<String, Object> updateBody = new HashMap<>();
+                if (eventType.equals("EnrollSuccess")) {
+                    updateBody.put("status", "success");
+                } else if (eventType.equals("EnrollFailure")) {
+                    updateBody.put("status", "failure");
+                    updateBody.put("errorCode", map.get("description"));
+                } else {
+                    return;
+                }
+
+                deviceServiceClient.updateEnrollStatus(deviceUuid, updateBody);
+            } catch (Exception e) {
+                logger.error("Error processing enroll status message", e);
+            }
+        });
+    }
+
+    /**
+     * Maps the free-form event type string coming from the IoT device into our internal
+     * NotificationEventType enum. The mapping is deliberately fuzzy – it relies on keywords
+     * to keep the firmware and the backend loosely coupled while still enabling us to
+     * categorise notifications properly.
+     */
+    private NotificationEventType mapEventType(String eventType) {
+        if (eventType == null) {
+            return NotificationEventType.DOORLOCK_MISC;
+        }
+
+        String normalized = eventType.toLowerCase();
+
+        if (normalized.contains("unauthorized") && normalized.contains("door")) {
+            return NotificationEventType.DOORLOCK_OPENED_UNAUTHORIZED;
+        }
+        if (normalized.contains("door") && normalized.contains("handle")) {
+            return NotificationEventType.DOORLOCK_HANDLE_TRIED_UNAUTHORIZED;
+        }
+        if (normalized.contains("door") && normalized.contains("opened")) {
+            return NotificationEventType.DOORLOCK_OPENED_AUTHORIZED;
+        }
+        if (normalized.contains("motion")) {
+            return NotificationEventType.DOORLOCK_SUSPICIOUS_ACTIVITY;
+        }
+        if (normalized.contains("fingerprint")) {
+            return NotificationEventType.DOORLOCK_HANDLE_TRIED_UNAUTHORIZED;
+        }
+
+        return NotificationEventType.DOORLOCK_MISC;
+    }
+
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 } 

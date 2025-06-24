@@ -50,4 +50,33 @@ export const deviceService = {
       throw error;
     }
   },
+
+  /**
+   * Initiates fingerprint enrollment for the given device.
+   * @param deviceId UUID of the device
+   * @param userFpId Numeric fingerprint template ID (1-127)
+   */
+  startFingerprintEnrollment: async (
+    deviceId: string,
+    userFpId: number,
+  ): Promise<void> => {
+    try {
+      await apiClient.post(`/devices/${deviceId}/fingerprint/enroll`, {
+        userFpId,
+      });
+    } catch (error) {
+      console.error('Failed to start fingerprint enrollment:', error);
+      throw error;
+    }
+  },
+
+  getFingerprintEnrollmentStatus: async (deviceId: string): Promise<'pending' | 'success' | 'failure'> => {
+    try {
+      const response = await apiClient.get(`/devices/${deviceId}/fingerprint/enroll/status`);
+      return response.data.status as 'pending' | 'success' | 'failure';
+    } catch (error) {
+      console.error('Failed to obtain fingerprint enrollment status:', error);
+      throw error;
+    }
+  },
 };

@@ -5,6 +5,7 @@ public class NotificationMessage {
     private String title;
     private String message;
     private String mediaUrl;
+    private String eventType;
 
     public String getHardwareId() {
         return hardwareId;
@@ -36,5 +37,13 @@ public class NotificationMessage {
     
     public void setMediaUrl(String mediaUrl) {
         this.mediaUrl = mediaUrl;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
     }
 } 

@@ -29,8 +29,10 @@ public class HomeDtoMapper {
         homeDTO.setUuid(home.getUuid());
         homeDTO.setName(home.getName());
         homeDTO.setAddress(home.getAddress());
-        homeDTO.setDeviceUuids(home.getDeviceUuids());
-        homeDTO.setAdminUuids(home.getAdminUuids());
+        homeDTO.setDeviceUuids(home.getDeviceUuids() != null ?
+                List.copyOf(home.getDeviceUuids()) : null);
+        homeDTO.setAdminUuids(home.getAdminUuids() != null ?
+                List.copyOf(home.getAdminUuids()) : null);
         
         // Convert HomeGuest entities to HomeGuestDTOs
         List<HomeGuestDTO> guestDTOs = home.getGuests().stream()

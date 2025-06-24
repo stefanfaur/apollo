@@ -30,6 +30,7 @@ public class SecurityConfig extends BaseSecurityConfig {
                         .requestMatchers("/actuator/**").permitAll() // Health checks
                         .requestMatchers("/api/devices/register").permitAll() // Device registration from MQTT
                         .requestMatchers("/api/devices/hardware/*/uuid").permitAll() // Device UUID lookup from MQTT
+                        .requestMatchers("/api/devices/*/fingerprint/enroll/status").permitAll() // Enroll status updates from MQTT via Notification Service
                         .anyRequest().authenticated() // All other require authentication
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)

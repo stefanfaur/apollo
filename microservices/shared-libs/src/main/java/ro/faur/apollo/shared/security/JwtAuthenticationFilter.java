@@ -36,15 +36,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 
                 // Create minimal authentication with extracted username and store the token in credentials
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    username, 
-                    token,
+                    username,
+                    token, // Store JWT in credentials so that Feign interceptors can propagate it
                     Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
                 );
+
+                // Also put the JWT in the details object in case Spring Security erases credentials later in the filter chain
+                authentication.setDetails(token);
                 
                 // Set authentication in security context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 
-                // Add user information to request headers for downstream processing
+                // Add user information to request headers for downstream processing/debugging purposes
                 request.setAttribute("X-User-Username", username);
             } else {
                 // Invalid token - return 401

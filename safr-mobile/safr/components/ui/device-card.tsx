@@ -1,16 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ImageSourcePropType } from 'react-native';
+import { View, Text, StyleSheet, Image, ImageSourcePropType, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 
 type DeviceCardProps = {
-    imageUri: string | ImageSourcePropType; // Accept both local (require) and remote (URL) images(for later when we get CDN)
+    imageUri: string | ImageSourcePropType; // Accept both local (require) and remote (URL) images (for later when we get CDN)
     title: string;
     description: string;
     status: 'ok' | 'warn' | 'error';
+    /**
+     * Triggered when the user taps anywhere on the card (e.g. navigate to device details).
+     */
+    onPress?: () => void;
+    /**
+     * Triggered when the user taps the fingerprint button to start fingerprint enrollment.
+     */
+    onEnrollPress?: () => void;
 };
 
-const DeviceCard: React.FC<DeviceCardProps> = ({ imageUri, title, description, status }) => {
+const DeviceCard: React.FC<DeviceCardProps> = ({ imageUri, title, description, status, onPress, onEnrollPress }) => {
     const getStatusIcon = () => {
         switch (status) {
             case 'ok':
@@ -32,14 +40,29 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ imageUri, title, description, s
     };
 
     return (
-        <View style={styles.card}>
+        <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.card}>
+            {/* Device thumbnail */}
             <Image source={getImageSource()} style={styles.image} />
+
+            {/* Main info (title & description) */}
             <View style={styles.info}>
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.description}>{description}</Text>
             </View>
+
+            {/* Fingerprint enrollment trigger */}
+            <TouchableOpacity
+                accessibilityLabel="Start fingerprint enrollment"
+                onPress={onEnrollPress}
+                style={styles.enrollButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+                <Ionicons name="finger-print" size={22} color={Colors.dark.primary} />
+            </TouchableOpacity>
+
+            {/* Device status icon */}
             <View style={styles.statusIcon}>{getStatusIcon()}</View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -47,13 +70,13 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 10,
-        borderRadius: 8,
-        backgroundColor: Colors.dark.background,
-        marginBottom: 10,
+        padding: 12,
+        borderRadius: 10,
+        backgroundColor: Colors.dark.gradientStart, // slightly lighter than the page background for contrast
+        marginBottom: 12,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.25,
         shadowRadius: 5,
     },
     image: {
@@ -74,8 +97,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: Colors.dark.icon,
     },
+    enrollButton: {
+        marginHorizontal: 6,
+    },
     statusIcon: {
-        marginLeft: 10,
+        marginLeft: 6,
     },
 });
 

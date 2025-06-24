@@ -2,6 +2,8 @@ package ro.faur.apollo.notification.client;
 
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class DeviceServiceClientFallback implements DeviceServiceClient {
 
@@ -14,5 +16,10 @@ public class DeviceServiceClientFallback implements DeviceServiceClient {
     public String getDeviceUuidByHardwareId(String hardwareId) {
         // Fallback: return null when device service is unavailable
         return null;
+    }
+
+    @Override
+    public void updateEnrollStatus(String deviceUuid, Map<String, Object> body) {
+        // Fallback: do nothing when device service is unavailable
     }
 } 

@@ -14,13 +14,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import AddDeviceForm from "@/components/forms/add-device-form";
 import CustomModal from "@/components/ui/custom-modal";
 import AddHomeForm from "@/components/forms/add-home-form";
+import FingerprintEnrollModal from '@/components/ui/fingerprint-enroll-modal';
 
 export default function HomeScreen() {
   const [homes, setHomes] = useState<HomeDTO[]>([]);
   const [isAddHomeModalVisible, setAddHomeModalVisible] = useState(false);
   const [isAddDeviceModalVisible, setAddDeviceModalVisible] = useState(false);
+  const [isEnrollModalVisible, setEnrollModalVisible] = useState(false);
   const router = useRouter();
   const [selectedHomeUuid, setSelectedHomeUuid] = useState<string | null>(null);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
 
   // Fetch homes
   const loadHomes = useCallback(async () => {
@@ -89,7 +92,6 @@ export default function HomeScreen() {
           <AddDeviceForm onSubmit={handleAddDevice} visible={isAddDeviceModalVisible} />
         </CustomModal>
 
-
         {homes.length > 0 ? (
             <ScrollView contentContainerStyle={styles.scrollContainer}>
               {homes.map((home) => (
@@ -106,6 +108,10 @@ export default function HomeScreen() {
                             title={device.name}
                             description={device.description}
                             status="ok"
+                            onEnrollPress={() => {
+                              setSelectedDeviceId(device.uuid);
+                              setEnrollModalVisible(true);
+                            }}
                         />
                     ))}
                     <TouchableOpacity
@@ -129,6 +135,13 @@ export default function HomeScreen() {
               <Text style={styles.message}>No security devices found.</Text>
             </View>
         )}
+
+        {/* Fingerprint enroll wizard */}
+        <FingerprintEnrollModal
+            visible={isEnrollModalVisible}
+            onClose={() => setEnrollModalVisible(false)}
+            deviceId={selectedDeviceId}
+        />
 
         {/* Add Home Button (properly placed) */}
         <TouchableOpacity

@@ -4,6 +4,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.faur.apollo.device.dto.DeviceDTO;
 import ro.faur.apollo.device.service.DeviceService;
+import ro.faur.apollo.device.service.FingerprintEnrollService;
 import ro.faur.apollo.shared.exception.DeviceException;
 
 import java.util.List;
@@ -14,9 +15,12 @@ import java.util.Map;
 public class DeviceController {
 
     private final DeviceService deviceService;
+    private final FingerprintEnrollService fingerprintEnrollService;
 
-    public DeviceController(DeviceService deviceService) {
+    public DeviceController(DeviceService deviceService,
+                            FingerprintEnrollService fingerprintEnrollService) {
         this.deviceService = deviceService;
+        this.fingerprintEnrollService = fingerprintEnrollService;
     }
 
     @GetMapping
@@ -81,6 +85,55 @@ public class DeviceController {
             @RequestParam String deviceType) {
         DeviceDTO device = deviceService.registerDevice(hardwareId, deviceType);
         return ResponseEntity.ok(device);
+    }
+
+    @PostMapping("/{deviceUuid}/fingerprint/enroll")
+    public ResponseEntity<?> startFingerprintEnroll(@PathVariable String deviceUuid,
+                                                    @RequestBody Map<String, Integer> body) {
+        Integer userFpId = body.get("userFpId");
+        if (userFpId == null || userFpId < 1 || userFpId > 127) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_TEMPLATE_ID",
+                    "message", "userFpId must be between 1 and 127"
+            ));
+        }
+
+        var device = deviceService.getDevice(deviceUuid);
+        if (device == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        fingerprintEnrollService.startEnrollment(deviceUuid, userFpId, device.getHardwareId());
+        return ResponseEntity.accepted().build();
+    }
+
+    @GetMapping("/{deviceUuid}/fingerprint/enroll/status")
+    public ResponseEntity<Map<String, String>> getEnrollStatus(@PathVariable String deviceUuid) {
+        var status = fingerprintEnrollService.getStatus(deviceUuid);
+        if (status == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Map.of("status", status.name().toLowerCase()));
+    }
+
+    @PostMapping("/{deviceUuid}/fingerprint/enroll/status")
+    public ResponseEntity<?> updateEnrollStatus(@PathVariable String deviceUuid,
+                                                @RequestBody Map<String, Object> body) {
+        String statusStr = (String) body.get("status");
+        if (statusStr == null) {
+            return ResponseEntity.badRequest().body("status required");
+        }
+        var statusEnum = switch (statusStr.toLowerCase()) {
+            case "success" -> ro.faur.apollo.device.domain.EnrollStatus.SUCCESS;
+            case "failure" -> ro.faur.apollo.device.domain.EnrollStatus.FAILURE;
+            default -> null;
+        };
+        if (statusEnum == null) {
+            return ResponseEntity.badRequest().body("Invalid status value");
+        }
+
+        fingerprintEnrollService.updateStatus(deviceUuid, statusEnum, (String) body.get("errorCode"));
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/unlink/{deviceUuid}")

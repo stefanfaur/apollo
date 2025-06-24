@@ -28,7 +28,7 @@ public class AuthController {
             String token = authService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
             return ResponseEntity.ok(new JwtResponse(token));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unable to authenticate user: " + e.getMessage());
         }
     }
 

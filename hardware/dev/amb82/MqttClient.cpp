@@ -2,6 +2,7 @@
 #include <ArduinoJson.h>
 
 extern const char* MQTT_UNLOCK_TOPIC;
+extern const char* MQTT_ENROLL_START_TOPIC;
 extern const char* HARDWARE_ID;
 extern const char* DEVICE_TYPE;
 
@@ -255,12 +256,25 @@ void MqttClient::update() {
 
     // Ensure we have subscribed to required topics once connected
     if (!_topicsSubscribed) {
-      debugPrint("MqttClient: Attempting initial topic subscription...");
-      if (client.subscribe(MQTT_UNLOCK_TOPIC)) {
-        debugPrint("MqttClient: Subscribed to unlock topic");
+      debugPrint("MqttClient: Attempting initial topic subscriptions...");
+
+      bool unlockOk = client.subscribe(MQTT_UNLOCK_TOPIC);
+      bool enrollOk = client.subscribe(MQTT_ENROLL_START_TOPIC);
+
+      // Process outgoing subscription packets immediately
+      client.loop();
+      delay(50);
+
+      if (unlockOk && enrollOk) {
+        debugPrint("MqttClient: Subscribed to unlock & enroll topics");
         _topicsSubscribed = true;
       } else {
-        debugPrint("MqttClient: Failed to subscribe (will retry)");
+        if (!unlockOk) {
+          debugPrint("MqttClient: Failed to subscribe to unlock topic (will retry)");
+        }
+        if (!enrollOk) {
+          debugPrint("MqttClient: Failed to subscribe to enroll topic (will retry)");
+        }
       }
     }
   }
