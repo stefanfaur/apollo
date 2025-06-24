@@ -50,10 +50,10 @@ public class GeminiMediaAnalysisService implements MediaAnalysisService {
 
     private Content createContent(byte[] mediaBytes, String mimeType, String mediaType) {
         String prompt = String.format(
-                "Analyze this %s from a doorlock security camera perspective and analyze what you see. " +
+                "Analyze this %s from a doorlock security camera perspective. " +
                         "Focus on any potential security concerns. " +
                         "Very briefly describe people outside the door if they are present. " +
-                        "Identify possible intruders/weapons/suspicious activities. " +
+                        "Identify if there are intruders/weapons/suspicious activities. " +
                         "Keep the description very concise.",
                 mediaType
         );
