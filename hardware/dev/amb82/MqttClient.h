@@ -20,7 +20,7 @@ public:
   
   // Publish a notification message
   bool publishNotification(const char* topic, const char* hardwareId, const char* eventType, 
-                          const char* description, const char* mediaUrl, const char* timestamp);
+                          const char* title, const char* description, const char* mediaUrl, const char* timestamp);
   
   // Update the MQTT client (call in loop)
   void update();

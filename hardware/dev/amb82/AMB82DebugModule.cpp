@@ -457,7 +457,7 @@ DebugModule::CommandResult AMB82DebugModule::cmdMqttTest(const char* args) {
     // Try to publish a test message
     respond("Attempting to publish test message...");
     if (_mqttClient.publishNotification("debug/test", "AMB82_DEBUG", 
-                                      "Debug Test", "MQTT connectivity test", "", "")) {
+                                      "Debug", "Debug Test", "MQTT connectivity test", "", "")) {
       respond("Successfully published test message");
       return CMD_SUCCESS;
     } else {
@@ -478,7 +478,7 @@ DebugModule::CommandResult AMB82DebugModule::cmdMqttPubTest(const char* args) {
   }
 
   // Publish a simple JSON debug message
-  bool result = _mqttClient.publishNotification(topic, "AMB82_DEBUG", "DEBUG", "MQTT publish test", "", "");
+  bool result = _mqttClient.publishNotification(topic, "AMB82_DEBUG", "DEBUG", "Debug", "MQTT publish test", "", "");
   if (result) {
     respond("Test message published to test/test topic");
     return CMD_SUCCESS;

@@ -42,9 +42,9 @@ void EventHandler::handleEvent(EventType type, int value) {
             Serial.println("Door opened event received (handled by EventHandler).");
             extern const char* MQTT_NOTIFICATION_TOPIC;
             extern const char* HARDWARE_ID;
-            eventTypeStr = eventTypeToString(lastEventType);
+            eventTypeStr = eventTypeToString(type);
             mqttClient.publishNotification(MQTT_NOTIFICATION_TOPIC, HARDWARE_ID, 
-                                         "Door Opened", "Door opened event received", "", eventTypeStr.c_str());
+                                         "DoorOpened", "Door Opened", "Door opened event received", "", "");
             break;
         }
 
@@ -130,7 +130,7 @@ void EventHandler::_uploadAndNotify() {
 
         // Publish notification via MQTT, including the event type
         if (mqttClient.publishNotification(MQTT_NOTIFICATION_TOPIC, HARDWARE_ID, 
-                                         eventTypeStr.c_str(), message.c_str(), mediaUrl.c_str(), timestampBuffer)) {
+                                         eventTypeStr.c_str(), title.c_str(), message.c_str(), mediaUrl.c_str(), timestampBuffer)) {
             Serial.println("MQTT notification sent successfully (EventHandler).");
         } else {
             Serial.println("Failed to send MQTT notification (EventHandler).");

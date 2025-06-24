@@ -169,7 +169,7 @@ bool MqttClient::subscribe(const char* topic) {
 }
 
 bool MqttClient::publishNotification(const char* topic, const char* hardwareId, const char* eventType, 
-                                    const char* description, const char* mediaUrl, const char* timestamp) {
+                                    const char* title, const char* description, const char* mediaUrl, const char* timestamp) {
   if (!client.connected()) {
     debugPrint("MqttClient: Cannot publish - not connected to broker");
     return false;
@@ -178,6 +178,7 @@ bool MqttClient::publishNotification(const char* topic, const char* hardwareId, 
   JsonDocument doc;
   doc["hardwareId"] = hardwareId;
   doc["eventType"] = eventType;
+  doc["title"] = title;
   doc["description"] = description;
   doc["mediaUrl"] = mediaUrl;
   doc["timestamp"] = timestamp;

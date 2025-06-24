@@ -346,7 +346,7 @@ void loop() {
              char desc[64];
              sprintf(desc, "FP enroll success id %d", incoming.payload[0]);
              eventLogger.logEvent(0, desc);
-             mqttClient.publishNotification(MQTT_ENROLL_STATUS_TOPIC, HARDWARE_ID, "EnrollSuccess", desc, "", "");
+             mqttClient.publishNotification(MQTT_ENROLL_STATUS_TOPIC, HARDWARE_ID, "EnrollSuccess", "Enroll Success", desc, "", "");
           }
           break;
           
@@ -355,7 +355,7 @@ void loop() {
              char desc[64];
              sprintf(desc, "FP enroll failure code 0x%02X", incoming.payload[0]);
              eventLogger.logEvent(0, desc);
-             mqttClient.publishNotification(MQTT_ENROLL_STATUS_TOPIC, HARDWARE_ID, "EnrollFailure", desc, "", "");
+             mqttClient.publishNotification(MQTT_ENROLL_STATUS_TOPIC, HARDWARE_ID, "EnrollFailure", "Enroll Failure", desc, "", "");
           }
           break;
           
@@ -363,7 +363,7 @@ void loop() {
           if (incoming.length == 1) {
              char desc[64];
              sprintf(desc, "Unlocked by FP id %d", incoming.payload[0]);
-             mqttClient.publishNotification(MQTT_EVENT_TOPIC, HARDWARE_ID, "UnlockedFP", desc, "", "");
+             mqttClient.publishNotification(MQTT_EVENT_TOPIC, HARDWARE_ID, "UnlockedFP", "Unlocked by Fingerprint", desc, "", "");
           }
           break;
           
