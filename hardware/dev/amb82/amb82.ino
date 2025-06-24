@@ -46,6 +46,9 @@ EventLogger eventLogger;
 AMB82DebugModule debugModule(videoHandler, httpClient, mqttClient, wifiManager);
 EventHandler eventHandler(videoHandler, httpClient, mqttClient, eventLogger);
 
+// Track last sensor event type received to correlate with externally requested recordings
+EventType g_lastSensorEventType = EventType::UNKNOWN;
+
 // MQTT callback function for message handling
 void mqttCallback(char* topic, uint8_t* payload, unsigned int length) {
   Serial.print("MQTT message received on topic: ");
@@ -224,11 +227,11 @@ void handleStartVideo() {
   Serial.println("Start video command received");
   debugModule.log("Start video command received from STM32");
   
-  // Clear any previous events
-  eventLogger.clear();
-  
   // Start a 10-second video recording - enable upload for STM32-triggered recordings
   if (videoHandler.startRecording(10000, true)) {
+    // Inform EventHandler so it can upload/notify when done
+    eventHandler.startExternalRecording(g_lastSensorEventType);
+
     // Send acknowledgement back to STM32
     uint8_t emptyPayload[1] = {0};
     sendMessage(Serial2, CMD_ACK, emptyPayload, 0);
@@ -254,6 +257,8 @@ void handleSensorEvent(const Message &msg) {
     // Cast the first byte to our EventType enum
     EventType eventType = static_cast<EventType>(msg.payload[0]);
     
+    // Store globally for other handlers (e.g., external recording start)
+    g_lastSensorEventType = eventType;
     int eventValue = 0;
     // If there's a value included, parse it (starting from the second byte)
     if (msg.length >= 3) {

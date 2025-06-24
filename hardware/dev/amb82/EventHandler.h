@@ -19,6 +19,9 @@ public:
     // Update method to check for state changes (e.g., recording finished)
     void update();
 
+    // Notify handler that a recording was started elsewhere (e.g., CMD_START_VIDEO)
+    void startExternalRecording(EventType type);
+
 private:
     VideoHandler& videoHandler;
     InternalHttpClient& httpClient;

@@ -21,6 +21,9 @@ void EventHandler::handleEvent(EventType type, int value) {
     // Log the event first
     eventLogger.logEvent(value, eventDescription.c_str());
 
+    // Helper used by multiple cases for publishing
+    String eventTypeStr;
+
     // Perform actions based on the specific event type
     switch (type) {
         case EventType::MOTION_DETECTED:
@@ -35,11 +38,11 @@ void EventHandler::handleEvent(EventType type, int value) {
             break;
 
         case EventType::DOOR_OPENED:
-        {
+        case EventType::DOOR_OPENED_2: {
             Serial.println("Door opened event received (handled by EventHandler).");
             extern const char* MQTT_NOTIFICATION_TOPIC;
             extern const char* HARDWARE_ID;
-            String eventTypeStr = eventTypeToString(lastEventType);
+            eventTypeStr = eventTypeToString(lastEventType);
             mqttClient.publishNotification(MQTT_NOTIFICATION_TOPIC, HARDWARE_ID, 
                                          "Door Opened", "Door opened event received", "", eventTypeStr.c_str());
             break;
@@ -55,7 +58,7 @@ void EventHandler::handleEvent(EventType type, int value) {
             }
             break;
 
-        case EventType::FINGERPRINT_FAILURE:
+        case EventType::FINGERPRINT_FAILURE: {
             Serial.println("Fingerprint authentication failure detected. Starting 5s video recording (via EventHandler).");
             // Start a 5-second video recording, enable upload
             if (videoHandler.startRecording(5000, true)) {
@@ -65,6 +68,7 @@ void EventHandler::handleEvent(EventType type, int value) {
                 Serial.println("ERROR: Failed to start recording from EventHandler.");
             }
             break;
+        }
 
         case EventType::UNKNOWN:
         default:
@@ -137,4 +141,10 @@ void EventHandler::_uploadAndNotify() {
     
     // Clear events after upload attempt (success or fail) associated with this recording cycle
     eventLogger.clear(); 
+}
+
+// External recording start notification
+void EventHandler::startExternalRecording(EventType type) {
+    isWaitingForUpload = true;
+    lastEventType = type;
 } 
