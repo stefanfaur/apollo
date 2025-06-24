@@ -3,7 +3,28 @@
 # Apollo Microservices - Local Environment Setup Script
 # This script helps set up the local development environment
 
-set -e
+# Detect if the script is being sourced (so that we should use `return` instead of
+# `exit` to avoid terminating the parent shell)
+_APOLLO_SETUP_SOURCED=0
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  _APOLLO_SETUP_SOURCED=1
+fi
+
+# Enable "exit on error" only when the script is executed, not when sourced,
+# so that we don't inadvertently close the interactive shell.
+if [[ $_APOLLO_SETUP_SOURCED -eq 0 ]]; then
+  set -e
+fi
+
+# Helper that exits or returns depending on how the script is executed
+_exit_or_return() {
+  local code=${1:-0}
+  if [[ $_APOLLO_SETUP_SOURCED -eq 1 ]]; then
+    return "$code"
+  else
+    exit "$code"
+  fi
+}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MICROSERVICES_DIR="$(dirname "$SCRIPT_DIR")"
@@ -29,7 +50,7 @@ if [ ! -f "$MICROSERVICES_DIR/.env" ]; then
         read -p "Press Enter after you've updated the .env file..."
     else
         echo "❌ env.template not found!"
-        exit 1
+        _exit_or_return 1
     fi
 else
     echo "✅ .env file already exists"
@@ -47,21 +68,28 @@ if command_exists docker; then
     echo "✅ Docker is installed"
 else
     echo "❌ Docker is not installed. Please install Docker first."
-    exit 1
+    _exit_or_return 1
 fi
 
-if command_exists docker compose; then
-    echo "✅ Docker Compose is installed"
+# Determine docker-compose command (supports both the plugin `docker compose`
+# and the standalone `docker-compose`).
+if command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
 else
-    echo "❌ Docker Compose is not installed. Please install Docker Compose first."
-    exit 1
+    echo "❌ Neither 'docker-compose' nor 'docker compose' is available. Please install Docker Compose (plugin or standalone)."
+    _exit_or_return 1
 fi
+echo "✅ Docker Compose is available via: $DOCKER_COMPOSE_CMD"
 
 # Load environment variables
 echo "📦 Loading environment variables..."
 set -a
+set -o allexport
 source "$MICROSERVICES_DIR/.env"
 set +a
+set +o allexport
 echo "✅ Environment variables loaded"
 
 # Validate required environment variables
@@ -90,7 +118,7 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
         echo "   - $var"
     done
     echo "Please update your .env file with actual values."
-    exit 1
+    _exit_or_return 1
 fi
 
 echo "✅ All required environment variables are set"
@@ -110,7 +138,7 @@ case $choice in
     1)
         echo "🚀 Starting all services..."
         cd "$MICROSERVICES_DIR"
-        docker-compose up -d
+        $DOCKER_COMPOSE_CMD up -d
         echo "✅ All services started!"
         echo "🌐 Services are available at:"
         echo "   - API Gateway: http://localhost:${API_GATEWAY_PORT:-8080}"
@@ -120,7 +148,7 @@ case $choice in
     2)
         echo "🚀 Starting infrastructure services..."
         cd "$MICROSERVICES_DIR"
-        docker-compose up -d postgres minio mosquitto
+        $DOCKER_COMPOSE_CMD up -d postgres minio mosquitto
         echo "✅ Infrastructure services started!"
         echo "🌐 Infrastructure services are available at:"
         echo "   - PostgreSQL: localhost:${DB_PORT:-5432}"
@@ -137,10 +165,12 @@ case $choice in
         ;;
     *)
         echo "❌ Invalid option. Exiting."
-        exit 1
+        _exit_or_return 1
         ;;
 esac
 
 echo ""
 echo "🎉 Setup complete!"
-echo "📚 For more information, see README-Configuration.md" 
+echo "📚 For more information, see README-Configuration.md"
+
+# (End of script) 
