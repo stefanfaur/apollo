@@ -10,4 +10,9 @@ public class NotificationServiceClientFallback implements NotificationServiceCli
     public void startFingerprintEnroll(Map<String, Object> body) {
         // Fallback: do nothing
     }
+
+    @Override
+    public void sendUnlockCommand(Map<String, Object> body) {
+        // Fallback: do nothing
+    }
 } 

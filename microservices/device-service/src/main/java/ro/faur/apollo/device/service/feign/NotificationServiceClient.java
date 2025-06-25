@@ -17,4 +17,7 @@ public interface NotificationServiceClient {
 
     @PostMapping("/internal/mqtt/fingerprint/enroll/start")
     void startFingerprintEnroll(@RequestBody Map<String, Object> body);
+
+    @PostMapping("/internal/mqtt/unlock")
+    void sendUnlockCommand(@RequestBody Map<String, Object> body);
 } 

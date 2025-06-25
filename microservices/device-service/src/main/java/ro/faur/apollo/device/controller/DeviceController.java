@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.faur.apollo.device.dto.DeviceDTO;
 import ro.faur.apollo.device.service.DeviceService;
 import ro.faur.apollo.device.service.FingerprintEnrollService;
+import ro.faur.apollo.device.service.feign.NotificationServiceClient;
 import ro.faur.apollo.shared.exception.DeviceException;
 
 import java.util.List;
@@ -16,11 +17,14 @@ public class DeviceController {
 
     private final DeviceService deviceService;
     private final FingerprintEnrollService fingerprintEnrollService;
+    private final NotificationServiceClient notificationServiceClient;
 
     public DeviceController(DeviceService deviceService,
-                            FingerprintEnrollService fingerprintEnrollService) {
+                            FingerprintEnrollService fingerprintEnrollService,
+                            NotificationServiceClient notificationServiceClient) {
         this.deviceService = deviceService;
         this.fingerprintEnrollService = fingerprintEnrollService;
+        this.notificationServiceClient = notificationServiceClient;
     }
 
     @GetMapping
@@ -140,5 +144,21 @@ public class DeviceController {
     public ResponseEntity<?> unlinkDeviceFromHome(@PathVariable String deviceUuid) {
         boolean success = deviceService.unlinkDeviceFromHome(deviceUuid);
         return success ? ResponseEntity.ok(true) : ResponseEntity.badRequest().body("Device not found");
+    }
+
+    @PostMapping("/{deviceUuid}/unlock")
+    public ResponseEntity<?> remoteUnlock(@PathVariable String deviceUuid) {
+        var device = deviceService.getDevice(deviceUuid);
+        if (device == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Map<String, Object> body = Map.of("hardwareId", device.getHardwareId());
+        try {
+            notificationServiceClient.sendUnlockCommand(body);
+            return ResponseEntity.accepted().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(502).body("Failed to send unlock command");
+        }
     }
 }

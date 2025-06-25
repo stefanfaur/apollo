@@ -268,4 +268,15 @@ public class MqttService {
         }
         return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
+
+    public void publishUnlock(String hardwareId) {
+        try {
+            String json = objectMapper.writeValueAsString(Map.of("hardwareId", hardwareId));
+            MqttMessage msg = new MqttMessage(json.getBytes(StandardCharsets.UTF_8));
+            mqttClient.publish("devices/commands/unlock", msg);
+            logger.info("Published remote unlock for {}", hardwareId);
+        } catch (Exception e) {
+            logger.error("Failed to publish unlock", e);
+        }
+    }
 } 

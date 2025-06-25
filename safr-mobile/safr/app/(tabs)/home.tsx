@@ -112,6 +112,14 @@ export default function HomeScreen() {
                               setSelectedDeviceId(device.uuid);
                               setEnrollModalVisible(true);
                             }}
+                            onUnlockPress={async () => {
+                              try {
+                                await deviceService.remoteUnlock(device.uuid);
+                                console.log('Unlock command sent');
+                              } catch (e) {
+                                console.warn('Failed to unlock remotely', e);
+                              }
+                            }}
                         />
                     ))}
                     <TouchableOpacity

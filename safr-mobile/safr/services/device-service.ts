@@ -79,4 +79,16 @@ export const deviceService = {
       throw error;
     }
   },
+
+  /**
+   * Sends a remote unlock command to the device via backend.
+   */
+  remoteUnlock: async (deviceId: string): Promise<void> => {
+    try {
+      await apiClient.post(`/devices/${deviceId}/unlock`);
+    } catch (error) {
+      console.error('Failed to send unlock command:', error);
+      throw error;
+    }
+  },
 };

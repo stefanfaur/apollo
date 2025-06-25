@@ -14,10 +14,9 @@ export default function EntryScreen() {
             try {
                 const token = await getToken();
                 if (token) {
-                    // Navigate to home if token exists
                     router.replace('/(tabs)/home');
                 } else {
-                    setLoading(false); // No token, stay on EntryScreen
+                    setLoading(false);
                 }
             } catch (error) {
                 console.error("Error fetching auth token:", error);

@@ -16,9 +16,13 @@ type DeviceCardProps = {
      * Triggered when the user taps the fingerprint button to start fingerprint enrollment.
      */
     onEnrollPress?: () => void;
+    /**
+     * Triggered when the user taps the unlock icon.
+     */
+    onUnlockPress?: () => void;
 };
 
-const DeviceCard: React.FC<DeviceCardProps> = ({ imageUri, title, description, status, onPress, onEnrollPress }) => {
+const DeviceCard: React.FC<DeviceCardProps> = ({ imageUri, title, description, status, onPress, onEnrollPress, onUnlockPress }) => {
     const getStatusIcon = () => {
         switch (status) {
             case 'ok':
@@ -60,6 +64,16 @@ const DeviceCard: React.FC<DeviceCardProps> = ({ imageUri, title, description, s
                 <Ionicons name="finger-print" size={22} color={Colors.dark.primary} />
             </TouchableOpacity>
 
+            {/* Remote unlock trigger */}
+            <TouchableOpacity
+                accessibilityLabel="Unlock remotely"
+                onPress={onUnlockPress}
+                style={styles.unlockButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+                <Ionicons name="lock-open" size={22} color={Colors.dark.accent} />
+            </TouchableOpacity>
+
             {/* Device status icon */}
             <View style={styles.statusIcon}>{getStatusIcon()}</View>
         </TouchableOpacity>
@@ -98,6 +112,9 @@ const styles = StyleSheet.create({
         color: Colors.dark.icon,
     },
     enrollButton: {
+        marginHorizontal: 6,
+    },
+    unlockButton: {
         marginHorizontal: 6,
     },
     statusIcon: {
