@@ -293,6 +293,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     padding: 12,
+    paddingBottom: 32,
     backgroundColor: Colors.dark.background,
     borderTopWidth: 1,
     borderTopColor: Colors.dark.buttonBackground,

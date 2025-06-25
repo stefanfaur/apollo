@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Device } from '@/services/device-service';
@@ -10,6 +10,64 @@ interface DevicePermissionsCardProps {
   selectedRights: Set<string>;
   onToggleRight: (right: string) => void;
 }
+
+const RightTile: React.FC<{ right: typeof DEVICE_RIGHTS[number]; isEnabled: boolean; onToggle: () => void; }> = ({ right, isEnabled, onToggle }) => {
+  const scale = React.useRef(new Animated.Value(1)).current;
+  const bgAnim = React.useRef(new Animated.Value(isEnabled ? 1 : 0)).current;
+
+  React.useEffect(() => {
+    // pop animation 
+    Animated.sequence([
+      Animated.spring(scale, {
+        toValue: 1.05,
+        friction: 5,
+        useNativeDriver: false,
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 6,
+        useNativeDriver: false,
+      }),
+    ]).start();
+
+    // background colour transition
+    Animated.timing(bgAnim, {
+      toValue: isEnabled ? 1 : 0,
+      duration: 250,
+      easing: Easing.linear,
+      useNativeDriver: false,
+    }).start();
+  }, [isEnabled]);
+
+  const backgroundColor = bgAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [Colors.dark.background, Colors.dark.primary + '20'],
+  });
+
+  return (
+    <Animated.View style={[styles.rightItem, { backgroundColor, transform: [{ scale }] }]}>
+      <View style={[styles.rightIconContainer, isEnabled && styles.rightIconContainerEnabled]}>
+        <Ionicons
+          name={right.icon}
+          size={20}
+          color={isEnabled ? Colors.dark.primary : Colors.dark.text}
+        />
+      </View>
+      <Text
+        style={[styles.rightLabel, isEnabled && styles.rightLabelEnabled]}
+        numberOfLines={2}
+      >
+        {right.label}
+      </Text>
+      <Switch
+        value={isEnabled}
+        onValueChange={onToggle}
+        trackColor={{ false: Colors.dark.buttonBackground, true: Colors.dark.primary }}
+        style={styles.switch}
+      />
+    </Animated.View>
+  );
+};
 
 const DevicePermissionsCard: React.FC<DevicePermissionsCardProps> = ({
   device,
@@ -29,40 +87,14 @@ const DevicePermissionsCard: React.FC<DevicePermissionsCardProps> = ({
       </View>
       
       <View style={styles.rightsContainer}>
-        {DEVICE_RIGHTS.map(right => {
-          const isEnabled = selectedRights.has(right.id);
-          return (
-            <View key={right.id} style={styles.rightItem}>
-              <View style={styles.rightItemLeft}>
-                <View style={[
-                  styles.rightIconContainer,
-                  isEnabled && styles.rightIconContainerEnabled
-                ]}>
-                  <Ionicons 
-                    name={right.icon} 
-                    size={16} 
-                    color={isEnabled ? Colors.dark.primary : Colors.dark.text}
-                  />
-                </View>
-                <Text style={[
-                  styles.rightLabel,
-                  isEnabled && styles.rightLabelEnabled
-                ]}>
-                  {right.label}
-                </Text>
-              </View>
-              <Switch
-                value={isEnabled}
-                onValueChange={() => onToggleRight(right.id)}
-                trackColor={{ 
-                  false: Colors.dark.buttonBackground,
-                  true: Colors.dark.primary 
-                }}
-                style={styles.switch}
-              />
-            </View>
-          );
-        })}
+        {DEVICE_RIGHTS.map(right => (
+          <RightTile
+            key={right.id}
+            right={right}
+            isEnabled={selectedRights.has(right.id)}
+            onToggle={() => onToggleRight(right.id)}
+          />
+        ))}
       </View>
     </View>
   );
@@ -76,6 +108,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.dark.primary + '20',
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
@@ -97,23 +130,21 @@ const styles = StyleSheet.create({
   rightsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    justifyContent: 'space-between',
   },
   rightItem: {
-    flexDirection: 'row',
+    width: '47%',
+    backgroundColor: Colors.dark.background,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: Colors.dark.background,
-    borderRadius: 8,
-    minWidth: '45%',
-    flex: 1,
+    marginBottom: 16,
+    flexDirection: 'column',
   },
   rightItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    display: 'none',
   },
   rightIconContainer: {
     width: 28,
@@ -134,7 +165,8 @@ const styles = StyleSheet.create({
     color: Colors.dark.text,
     fontSize: 12,
     opacity: 0.8,
-    flex: 1,
+    textAlign: 'center',
+    marginTop: 8,
   },
   rightLabelEnabled: {
     color: Colors.dark.primary,
@@ -143,7 +175,7 @@ const styles = StyleSheet.create({
   },
   switch: {
     transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
-    marginLeft: 8,
+    marginTop: 8,
   },
 });
 
