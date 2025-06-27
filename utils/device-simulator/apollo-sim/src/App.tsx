@@ -1,8 +1,8 @@
-
 import { Grid, Box, Typography, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { DeviceProvider } from './context/DeviceContext';
 import DeviceList from './components/DeviceList';
 import DeviceControl from './components/DeviceControl';
+import CommandLog from './components/CommandLog';
 import './App.css';
 
 const theme = createTheme({
@@ -36,8 +36,13 @@ function App() {
             <Grid item xs={12} md={4}>
               <DeviceList />
             </Grid>
-            <Grid item xs={12} md={8}>
-              <DeviceControl />
+            <Grid item xs={12} md={8} container direction="column" spacing={2}>
+              <Grid item xs>
+                <DeviceControl />
+              </Grid>
+              <Grid item xs>
+                <CommandLog />
+              </Grid>
             </Grid>
           </Grid>
         </Box>

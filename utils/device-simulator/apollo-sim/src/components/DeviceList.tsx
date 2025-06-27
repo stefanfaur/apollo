@@ -54,16 +54,17 @@ const DeviceList: React.FC = () => {
         <ListItemText
           primary={device.id}
           secondary={
-            <>
-              <Typography variant="body2" component="span">
+            <Box component="div">
+              <Box component="span">
                 Status: {device.isActive ? 'Active' : 'Inactive'}
-              </Typography>
+                {device.lockState && ` • Lock: ${device.lockState}`}
+              </Box>
               {device.lastMessageTime && (
-                <Typography variant="body2" component="div" color="text.secondary">
+                <Box component="div" sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
                   Last Message: {new Date(device.lastMessageTime).toLocaleTimeString()}
-                </Typography>
+                </Box>
               )}
-            </>
+            </Box>
           }
         />
       </ListItem>

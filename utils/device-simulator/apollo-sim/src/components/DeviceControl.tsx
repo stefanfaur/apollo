@@ -10,12 +10,16 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Chip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { useDevices } from '../context/DeviceContext';
 import MQTTService from '../services/mqtt';
 import { uploadMedia, loadSampleImages } from '../services/mediaService';
+import { SensorEventType } from '../types';
 
 type NotificationType = {
   title: string;
@@ -30,15 +34,24 @@ const NOTIFICATION_TYPES: NotificationType[] = [
   { title: 'Successful Entry', message: 'Successful entry recorded', requiresMedia: true },
 ];
 
+const SENSOR_EVENTS = [
+  { type: SensorEventType.MOTION_DETECTED, description: 'Motion detected', requiresMedia: true },
+  { type: SensorEventType.DOOR_OPENED, description: 'Door opened (Frame)', requiresMedia: true },
+  { type: SensorEventType.DOOR_OPENED_2, description: 'Door opened (Handle)', requiresMedia: true },
+  { type: SensorEventType.DOOR_OPENED_UNAUTH, description: 'Door opened (Unauthorized)', requiresMedia: true },
+  { type: SensorEventType.FINGERPRINT_FAILURE, description: 'Fingerprint authentication failed', requiresMedia: false },
+];
+
 const DeviceControl: React.FC = () => {
   const { selectedDevice, updateDeviceLastMessage } = useDevices();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [sampleImages, setSampleImages] = useState<File[]>([]);
+  const [sampleMedia, setSampleMedia] = useState<File[]>([]);
   const [mqttStatus, setMqttStatus] = useState<'connected' | 'disconnected'>('disconnected');
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error'>('success');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'success' | 'error' | 'warning'>('success');
+  const [autoSensorMode, setAutoSensorMode] = useState(false);
 
   // Monitor MQTT connection status
   useEffect(() => {
@@ -79,7 +92,7 @@ const DeviceControl: React.FC = () => {
   const loadImages = useCallback(async () => {
     try {
       const images = await loadSampleImages();
-      setSampleImages(images);
+      setSampleMedia(images);
     } catch (error) {
       showNotification('Failed to load sample images', 'error');
     }
@@ -89,7 +102,7 @@ const DeviceControl: React.FC = () => {
     loadImages();
   }, [loadImages]);
 
-  const showNotification = (message: string, severity: 'success' | 'error') => {
+  const showNotification = (message: string, severity: 'success' | 'error' | 'warning') => {
     setSnackbarMessage(message);
     setSnackbarSeverity(severity);
     setSnackbarOpen(true);
@@ -114,7 +127,7 @@ const DeviceControl: React.FC = () => {
     setIsLoading(true);
     try {
       let mediaUrl = '';
-      if (type.requiresMedia && selectedFile) {
+      if (selectedFile) {
         try {
           mediaUrl = await uploadMedia(selectedFile);
           showNotification('Media uploaded successfully', 'success');
@@ -123,6 +136,8 @@ const DeviceControl: React.FC = () => {
           setIsLoading(false);
           return;
         }
+      } else if (type.requiresMedia) {
+        showNotification('This event type recommends media, but proceeding without it.', 'warning');
       }
 
       const mqtt = MQTTService.getInstance();
@@ -148,6 +163,77 @@ const DeviceControl: React.FC = () => {
     setSelectedFile(file);
     showNotification('Sample image selected', 'success');
   };
+
+  const sendSensorEvent = async (sensorEvent: typeof SENSOR_EVENTS[0]) => {
+    if (!selectedDevice) return;
+    
+    if (mqttStatus !== 'connected') {
+      showNotification('MQTT not connected. Please wait for connection.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      let mediaUrl = '';
+      if (selectedFile) {
+        try {
+          mediaUrl = await uploadMedia(selectedFile);
+          showNotification('Media uploaded successfully', 'success');
+        } catch (error) {
+          showNotification('Failed to upload media. Please try again.', 'error');
+          setIsLoading(false);
+          return;
+        }
+      } else if (sensorEvent.requiresMedia) {
+        showNotification('This sensor event recommends media, but proceeding without it.', 'warning');
+      }
+
+      const mqtt = MQTTService.getInstance();
+      console.log("MEDIA URL", mediaUrl);
+      mqtt.publishSensorNotification({
+        hardwareId: selectedDevice.id,
+        title: sensorEvent.description,
+        message: sensorEvent.description,
+        mediaUrl: mediaUrl || undefined,
+        timestamp: Date.now().toString(),
+      });
+
+      updateDeviceLastMessage(selectedDevice.id);
+      setSelectedFile(null);
+      showNotification(`${sensorEvent.description} event sent successfully`, 'success');
+    } catch (error) {
+      console.error('Error sending sensor event:', error);
+      showNotification('Failed to send sensor event. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Auto sensor simulation
+  useEffect(() => {
+    if (!autoSensorMode || !selectedDevice || mqttStatus !== 'connected') return;
+
+    const interval = setInterval(() => {
+      // Randomly trigger sensor events (10% chance per check)
+      if (Math.random() < 0.1) {
+        const randomEvent = SENSOR_EVENTS[Math.floor(Math.random() * SENSOR_EVENTS.length)];
+        sendSensorEvent(randomEvent);
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [autoSensorMode, selectedDevice, mqttStatus]);
+
+  // Monitor enroll status changes for notifications
+  useEffect(() => {
+    if (selectedDevice?.enrollStatus === 'in_progress') {
+      showNotification('Fingerprint enrollment in progress...', 'warning');
+    } else if (selectedDevice?.enrollStatus === 'success') {
+      showNotification('Fingerprint enrollment successful!', 'success');
+    } else if (selectedDevice?.enrollStatus === 'failure') {
+      showNotification('Fingerprint enrollment failed!', 'error');
+    }
+  }, [selectedDevice?.enrollStatus]);
 
   if (!selectedDevice) {
     return (
@@ -181,6 +267,14 @@ const DeviceControl: React.FC = () => {
               MQTT Disconnected
             </Alert>
           )}
+          {selectedDevice.lockState === 'unlocked' ? (
+            <Chip label="Unlocked" color="warning" size="small" />
+          ) : (
+            <Chip label="Locked" color="success" size="small" />
+          )}
+          {selectedDevice.enrollStatus && selectedDevice.enrollStatus !== 'idle' && (
+            <Chip label={`Enroll: ${selectedDevice.enrollStatus}`} color="info" size="small" />
+          )}
         </Box>
       </Box>
 
@@ -195,13 +289,49 @@ const DeviceControl: React.FC = () => {
                 variant="contained"
                 fullWidth
                 onClick={() => sendNotification(type)}
-                disabled={type.requiresMedia && !selectedFile || mqttStatus !== 'connected'}
+                disabled={mqttStatus !== 'connected'}
               >
                 {type.title}
               </Button>
             </Grid>
           ))}
         </Grid>
+      </Box>
+
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+          Sensor Events
+        </Typography>
+        <Grid container spacing={2}>
+          {SENSOR_EVENTS.map((event) => (
+            <Grid item xs={12} sm={6} key={event.type}>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => sendSensorEvent(event)}
+                disabled={mqttStatus !== 'connected'}
+              >
+                {event.description}
+              </Button>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      <Box sx={{ mb: 3 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={autoSensorMode}
+              onChange={(e) => setAutoSensorMode(e.target.checked)}
+              disabled={mqttStatus !== 'connected'}
+            />
+          }
+          label="Auto Sensor Simulation"
+        />
+        <Typography variant="caption" display="block" color="text.secondary">
+          Randomly triggers sensor events every 5 seconds when enabled
+        </Typography>
       </Box>
 
       <Box sx={{ mb: 3 }}>
@@ -222,24 +352,52 @@ const DeviceControl: React.FC = () => {
         </label>
 
         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Sample Images
+          Sample Videos
         </Typography>
         <Grid container spacing={1}>
-          {sampleImages.map((file, index) => (
+          {sampleMedia.map((file, index) => (
             <Grid item xs={4} key={index}>
               <Card 
                 sx={{ 
                   cursor: 'pointer',
-                  border: selectedFile === file ? '2px solid primary.main' : 'none'
+                  border: selectedFile === file ? '2px solid primary.main' : 'none',
+                  position: 'relative'
                 }}
                 onClick={() => handleSampleImageSelect(file)}
               >
-                <CardMedia
-                  component="img"
-                  height="100"
-                  image={URL.createObjectURL(file)}
-                  alt={`Sample ${index + 1}`}
-                />
+                {file.type.startsWith('video/') ? (
+                  <Box sx={{ position: 'relative' }}>
+                    <video
+                      width="100%"
+                      height="100"
+                      style={{ objectFit: 'cover' }}
+                      muted
+                    >
+                      <source src={URL.createObjectURL(file)} type={file.type} />
+                    </video>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        position: 'absolute', 
+                        bottom: 4, 
+                        left: 4, 
+                        color: 'white',
+                        backgroundColor: 'rgba(0,0,0,0.7)',
+                        px: 1,
+                        borderRadius: 1
+                      }}
+                    >
+                      {file.name.replace('.mp4', '')}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <CardMedia
+                    component="img"
+                    height="100"
+                    image={URL.createObjectURL(file)}
+                    alt={`Sample ${index + 1}`}
+                  />
+                )}
               </Card>
             </Grid>
           ))}

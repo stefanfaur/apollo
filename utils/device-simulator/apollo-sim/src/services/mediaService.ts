@@ -4,7 +4,7 @@ import { API_CONFIG } from '../config';
 export async function uploadMedia(file: File): Promise<string> {
   try {
     // Get presigned URL
-    const presignedResponse = await axios.get(`${API_CONFIG.BASE_URL}/api/minio/presigned-url`, {
+    const presignedResponse = await axios.get(`${API_CONFIG.BASE_URL}/api/files/presigned-url`, {
       params: {
         filename: file.name
       }
@@ -31,28 +31,40 @@ export async function uploadMedia(file: File): Promise<string> {
 }
 
 export async function loadSampleImages(): Promise<File[]> {
-  const imageUrls = [
-    'https://picsum.photos/1920/1080?random',
-    'https://picsum.photos/1920/1080?random',
-    'https://picsum.photos/1920/1080?random',
-    'http://localhost:9000/apollo-assets/simulator-sample-images/sample1.jpg',
-    'http://localhost:9000/apollo-assets/simulator-sample-images/sample2.jpg',
-    'http://localhost:9000/apollo-assets/simulator-sample-images/sample3.jpg',
-    'http://localhost:9000/apollo-assets/simulator-sample-images/sample4.jpg',
-    'http://localhost:9000/apollo-assets/simulator-sample-images/sample5.jpeg',
-    'http://localhost:9000/apollo-assets/simulator-sample-images/sample6.jpg',
+  // Use local video files from public/sample-videos directory
+  const videoFiles = [
+    'sample1.mp4',
+    'sample2.mp4', 
+    'sample3.mp4',
+    'sample4.mp4',
+    'sample5.mp4',
+    'sample6.mp4',
+    'sample7.mp4',
+    'sample8.mp4',
+    'sample9.mp4',
   ];
 
   try {
-    const imagePromises = imageUrls.map(async (url, index) => {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      return new File([blob], `sample-image-${index + 1}.jpg`, { type: 'image/jpeg' });
+    const mediaPromises = videoFiles.map(async (filename, index) => {
+      const url = `/sample-videos/${filename}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${filename}`);
+        }
+        const blob = await response.blob();
+        return new File([blob], filename, { type: 'video/mp4' });
+      } catch (error) {
+        console.warn(`Failed to load ${filename}:`, error);
+        // Create a minimal fallback file if the local file fails to load
+        const fallbackBlob = new Blob(['sample video content'], { type: 'video/mp4' });
+        return new File([fallbackBlob], filename, { type: 'video/mp4' });
+      }
     });
 
-    return Promise.all(imagePromises);
+    return Promise.all(mediaPromises);
   } catch (error) {
-    console.error('Error loading sample images:', error);
+    console.error('Error loading sample videos:', error);
     return [];
   }
 }
