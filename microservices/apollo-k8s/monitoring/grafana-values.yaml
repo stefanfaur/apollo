@@ -30,10 +30,16 @@ ingress:
   enabled: true
   ingressClassName: traefik
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"  
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
     - grafana.faur.sh
   path: /
+  tls:
+    - secretName: grafana-tls
+      hosts:
+        - grafana.faur.sh
 
 # Data source configurations
 datasources:
@@ -117,7 +123,7 @@ dashboardProviders:
 # Basic configuration
 grafana.ini:
   server:
-    root_url: "http://grafana.faur.sh"
+    root_url: "https://grafana.faur.sh"
   security:
     allow_embedding: true
   auth.anonymous:

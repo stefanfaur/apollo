@@ -12,8 +12,7 @@ spec:
 
   tls:                          # cert-manager will fill the secret
   - hosts:
-      - api.apollo.faur.sh             # 🔁 put every host you expose here
-      - grafana.faur.sh
+      - api.apollo.faur.sh             
       - minio.faur.sh
     secretName: api-faur-sh-tls
 
@@ -73,16 +72,7 @@ spec:
             name: file-storage-service
             port:
               number: 8080
-  - host: grafana.faur.sh
-    http:
-      paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: grafana
-              port:
-                number: 3000
+
   - host: minio.faur.sh
     http:
       paths:
