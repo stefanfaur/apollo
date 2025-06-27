@@ -32,7 +32,7 @@ ingress:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
   hosts:
-    - grafana.local
+    - grafana.faur.sh
   path: /
 
 # Data source configurations
@@ -117,7 +117,7 @@ dashboardProviders:
 # Basic configuration
 grafana.ini:
   server:
-    root_url: "http://grafana.local"
+    root_url: "http://grafana.faur.sh"
   security:
     allow_embedding: true
   auth.anonymous:

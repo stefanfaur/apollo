@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 CLUSTER_NAME="apollo"
 REGISTRY_NAME="apollo-registry"
-K3D_PORT_MAPPING="-p 80:80@loadbalancer -p 443:443@loadbalancer"
+K3D_PORT_MAPPING="-p 80:80@loadbalancer -p 443:443@loadbalancer -p 5432:5432@loadbalancer -p 1883:1883@loadbalancer -p 1884:1884@loadbalancer -p 9000:9000@loadbalancer -p 9001:9001@loadbalancer -p 7000-7020:7000-7020@loadbalancer"
 
 # Parse command line arguments
 QUICK_MODE=false

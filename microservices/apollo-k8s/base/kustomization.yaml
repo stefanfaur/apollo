@@ -4,28 +4,29 @@ kind: Kustomization
 # Base resources
 resources:
   # Infrastructure
-  - ../infra/namespace-apps.yaml
-  - ../infra/namespace-obsv.yaml
-  - ../infra/rbac.yaml
-  - ../infra/postgres.yaml
-  - ../infra/mosquitto.yaml
-  - ../infra/ingress.yaml
+  - infra/namespace-apps.yaml
+  - infra/namespace-obsv.yaml
+  - infra/rbac.yaml
+  - infra/postgres.yaml
+  - infra/mosquitto.yaml
+  - infra/minio.yaml
+  - infra/ingress.yaml
   
   # Applications
-  - ../apps/api-gateway/deployment.yaml
-  - ../apps/api-gateway/service.yaml
-  - ../apps/user-service/deployment.yaml
-  - ../apps/user-service/service.yaml
-  - ../apps/device-service/deployment.yaml
-  - ../apps/device-service/service.yaml
-  - ../apps/media-analysis-service/deployment.yaml
-  - ../apps/media-analysis-service/service.yaml
-  - ../apps/home-service/deployment.yaml
-  - ../apps/home-service/service.yaml
-  - ../apps/file-storage-service/deployment.yaml
-  - ../apps/file-storage-service/service.yaml
-  - ../apps/notification-service/deployment.yaml
-  - ../apps/notification-service/service.yaml
+  - apps/api-gateway/deployment.yaml
+  - apps/api-gateway/service.yaml
+  - apps/user-service/deployment.yaml
+  - apps/user-service/service.yaml
+  - apps/device-service/deployment.yaml
+  - apps/device-service/service.yaml
+  - apps/media-analysis-service/deployment.yaml
+  - apps/media-analysis-service/service.yaml
+  - apps/home-service/deployment.yaml
+  - apps/home-service/service.yaml
+  - apps/file-storage-service/deployment.yaml
+  - apps/file-storage-service/service.yaml
+  - apps/notification-service/deployment.yaml
+  - apps/notification-service/service.yaml
 
 # Common labels applied to all resources
 commonLabels:

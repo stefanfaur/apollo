@@ -28,6 +28,8 @@ images:
 
 patchesStrategicMerge:
   - patches/local-resources.yaml
+  - patches/nodeports.yaml
+  - patches/postgres-exporter.yaml
 
 commonLabels:
   environment: local
