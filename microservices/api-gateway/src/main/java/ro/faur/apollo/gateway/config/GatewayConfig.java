@@ -40,6 +40,31 @@ public class GatewayConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+                // OpenAPI Documentation routes (public access for swagger UI)
+                .route("user-service-openapi", r -> r.path("/user-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/user-service/v3/api-docs", "/v3/api-docs"))
+                        .uri(getUserServiceUri()))
+                
+                .route("device-service-openapi", r -> r.path("/device-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/device-service/v3/api-docs", "/v3/api-docs"))
+                        .uri(getDeviceServiceUri()))
+                
+                .route("media-analysis-service-openapi", r -> r.path("/media-analysis-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/media-analysis-service/v3/api-docs", "/v3/api-docs"))
+                        .uri(getMediaAnalysisServiceUri()))
+                
+                .route("home-service-openapi", r -> r.path("/home-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/home-service/v3/api-docs", "/v3/api-docs"))
+                        .uri(getHomeServiceUri()))
+                
+                .route("notification-service-openapi", r -> r.path("/notification-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/notification-service/v3/api-docs", "/v3/api-docs"))
+                        .uri(getNotificationServiceUri()))
+                
+                .route("file-storage-service-openapi", r -> r.path("/file-storage-service/v3/api-docs")
+                        .filters(f -> f.rewritePath("/file-storage-service/v3/api-docs", "/v3/api-docs"))
+                        .uri(getFileStorageServiceUri()))
+                
                 // User Service routes (auth endpoints - public)
                 .route("user-auth", r -> r.path("/api/auth/**")
                         .uri(getUserServiceUri()))
@@ -70,12 +95,12 @@ public class GatewayConfig {
                         .uri(getNotificationServiceUri()))
                 
                 // File Storage Service routes - some public, some protected
-                .route("file-storage-public", r -> r.path("/api/files/presigned-url", "/api/files/convert-to-base64")
+                .route("file-storage-public", r -> r.path("/api/files/**")
                         .uri(getFileStorageServiceUri()))
                 
-                .route("file-storage-protected", r -> r.path("/api/files/**")
-                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
-                        .uri(getFileStorageServiceUri()))
+//                .route("file-storage-protected", r -> r.path("/api/files/**")
+//                        .filters(f -> f.filter(jwtAuthenticationFilter.apply(new JwtAuthenticationFilter.Config())))
+//                        .uri(getFileStorageServiceUri()))
                 
                 // Legacy Minio routes
                 .route("minio-legacy", r -> r.path("/api/minio/**")

@@ -72,7 +72,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Skip filtering for actuator endpoints
-        return path.startsWith("/actuator/");
+        // Skip filtering for actuator endpoints and OpenAPI documentation
+        return path.startsWith("/actuator/") ||
+               path.startsWith("/v3/api-docs") ||
+               path.startsWith("/swagger-ui");
     }
 } 
