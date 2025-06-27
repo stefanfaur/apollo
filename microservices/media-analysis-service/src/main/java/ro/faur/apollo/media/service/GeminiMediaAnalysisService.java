@@ -50,11 +50,20 @@ public class GeminiMediaAnalysisService implements MediaAnalysisService {
 
     private Content createContent(byte[] mediaBytes, String mimeType, String mediaType) {
         String prompt = String.format(
-                "Analyze this %s from a doorlock security camera perspective. " +
-                        "Focus on any potential security concerns. " +
-                        "Very briefly describe people outside the door if they are present. " +
-                        "Identify if there are intruders/weapons/suspicious activities. " +
-                        "Keep the description very concise.",
+                "You are analyzing video from a smart home doorlock camera. " +
+                        "Output only concise plain text with line breaks — no markdown, no lists. " +
+                        "Do not describe the environment or background unless it changes. " +
+                        "Focus only on unusual or new events involving people or motion.\n" +
+                        "\n" +
+                        "For each event, include:\n" +
+                        "- Timestamp (MM:SS)\n" +
+                        "- What person is doing (e.g. approaching, loitering, taking a package)\n" +
+                        "- Who they appear to be (courier with identifiable logo/uniform, visitor, stranger)\n" +
+                        "- Demeanor (friendly, suspicious, aggressive)\n" +
+                        "- Any tools/weapons or suspicious objects\n" +
+                        "- End with a short alert (e.g. \"ALERT: possible intruder\", \"ALERT: package theft\") **only if a security concern exists**.\n" +
+                        "\n" +
+                        "Use clean, short sentences separated by newlines. No extra narration. Be brief and informative like a notification.\n",
                 mediaType
         );
 
