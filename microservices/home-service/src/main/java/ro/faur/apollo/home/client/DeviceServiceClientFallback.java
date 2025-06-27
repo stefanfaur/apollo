@@ -33,4 +33,9 @@ public class DeviceServiceClientFallback implements DeviceServiceClient {
     public Boolean unlinkDeviceFromHome(String deviceUuid) {
         return false;
     }
+
+    @Override
+    public List<DeviceDTO> getDevicesByHomeUuids(List<String> homeUuids) {
+        return Collections.emptyList();
+    }
 } 

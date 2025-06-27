@@ -44,6 +44,19 @@ public class DeviceService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieve devices for multiple homes in a single database query.
+     */
+    public List<DeviceDTO> getDevicesByHomeUuids(List<String> homeUuids) {
+        if (homeUuids == null || homeUuids.isEmpty()) {
+            return List.of();
+        }
+        return deviceRepository.findByHomeUuidIn(homeUuids)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     public DeviceDTO createDevice(String name, String deviceType, String description, String hardwareId, String homeUuid) {
         Device existingDevice = deviceRepository.findByHardwareId(hardwareId);
         if (existingDevice == null) {

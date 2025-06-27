@@ -55,6 +55,14 @@ public class DeviceController {
         return deviceService.getDevicesByHomeUuid(homeUuid);
     }
 
+    /**
+     * Batch endpoint to retrieve devices for multiple homes.
+     */
+    @GetMapping("/by-homes")
+    public List<DeviceDTO> getDevicesByHomeUuids(@RequestParam List<String> homeUuids) {
+        return deviceService.getDevicesByHomeUuids(homeUuids);
+    }
+
     @PostMapping
     public ResponseEntity<?> createDevice(
             @RequestParam String name,
@@ -107,7 +115,11 @@ public class DeviceController {
             return ResponseEntity.notFound().build();
         }
 
-        fingerprintEnrollService.startEnrollment(deviceUuid, userFpId, device.getHardwareId());
+        // Offload the potentially slow operation to a background thread
+        java.util.concurrent.CompletableFuture.runAsync(() ->
+                fingerprintEnrollService.startEnrollment(deviceUuid, userFpId, device.getHardwareId())
+        );
+
         return ResponseEntity.accepted().build();
     }
 
@@ -154,11 +166,17 @@ public class DeviceController {
         }
 
         Map<String, Object> body = Map.of("hardwareId", device.getHardwareId());
-        try {
-            notificationServiceClient.sendUnlockCommand(body);
-            return ResponseEntity.accepted().build();
-        } catch (Exception e) {
-            return ResponseEntity.status(502).body("Failed to send unlock command");
-        }
+
+        // Fire-and-forget: perform the Feign call asynchronously so the client doesn't wait
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                notificationServiceClient.sendUnlockCommand(body);
+            } catch (Exception e) {
+                // Just log the error; we don't want to fail the user's request
+                System.err.println("Failed to send unlock command for device " + deviceUuid + ": " + e.getMessage());
+            }
+        });
+
+        return ResponseEntity.accepted().build();
     }
 }

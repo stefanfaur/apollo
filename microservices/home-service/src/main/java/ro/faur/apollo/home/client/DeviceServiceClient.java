@@ -31,4 +31,7 @@ public interface DeviceServiceClient {
 
     @PostMapping("/api/devices/unlink/{deviceUuid}")
     Boolean unlinkDeviceFromHome(@PathVariable String deviceUuid);
+
+    @GetMapping("/api/devices/by-homes")
+    List<DeviceDTO> getDevicesByHomeUuids(@RequestParam("homeUuids") List<String> homeUuids);
 } 
