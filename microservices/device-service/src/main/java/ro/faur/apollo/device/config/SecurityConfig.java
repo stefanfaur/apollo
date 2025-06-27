@@ -24,10 +24,11 @@ public class SecurityConfig extends BaseSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/actuator/**").permitAll() // Health checks
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // OpenAPI docs
                         .requestMatchers("/api/devices/register").permitAll() // Device registration from MQTT
                         .requestMatchers("/api/devices/hardware/*/uuid").permitAll() // Device UUID lookup from MQTT
                         .requestMatchers("/api/devices/*/fingerprint/enroll/status").permitAll() // Enroll status updates from MQTT via Notification Service
