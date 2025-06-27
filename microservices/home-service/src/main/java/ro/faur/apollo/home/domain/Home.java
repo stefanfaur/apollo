@@ -18,19 +18,19 @@ public class Home extends BaseEntity {
     @Column(nullable = false)
     private String address;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @BatchSize(size = 256)
     @CollectionTable(name = "home_device_uuids", joinColumns = @JoinColumn(name = "home_uuid"))
     @Column(name = "device_uuid")
     private List<String> deviceUuids = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @BatchSize(size = 256)
     @CollectionTable(name = "home_admin_uuids", joinColumns = @JoinColumn(name = "home_uuid"))
     @Column(name = "admin_uuid")
     private List<String> adminUuids = new ArrayList<>();
 
-    @OneToMany(mappedBy = "homeUuid", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "homeUuid", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
     @BatchSize(size = 256)
     private List<HomeGuest> guests = new ArrayList<>();

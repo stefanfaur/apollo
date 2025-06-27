@@ -9,7 +9,7 @@ import java.util.List;
 @FeignClient(
     name = "device-service",
     url = "${services.device.url:}",
-    fallback = DeviceServiceClientFallback.class
+    fallbackFactory = DeviceServiceClientFallback.class
 )
 public interface DeviceServiceClient {
 

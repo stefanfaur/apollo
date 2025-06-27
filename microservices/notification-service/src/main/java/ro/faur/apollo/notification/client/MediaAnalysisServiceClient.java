@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(
     name = "media-analysis-service",
     url = "${services.media-analysis.url:}",
-    fallback = MediaAnalysisServiceClientFallback.class
+    fallbackFactory = MediaAnalysisServiceClientFallback.class
 )
 @Primary
 public interface MediaAnalysisServiceClient {

@@ -3,6 +3,8 @@ package ro.faur.apollo.shared.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import feign.codec.ErrorDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ro.faur.apollo.shared.exception.DeviceException;
 
 import java.io.IOException;
@@ -16,12 +18,16 @@ import java.util.Map;
  */
 public class FeignErrorDecoder implements ErrorDecoder {
 
+    private static final Logger logger = LoggerFactory.getLogger(FeignErrorDecoder.class);
     private final ErrorDecoder defaultErrorDecoder = new Default();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public Exception decode(String methodKey, Response response) {
         String responseBody = extractResponseBody(response);
+        
+        logger.error("Feign error - Method: {}, Status: {}, Response: {}", 
+                    methodKey, response.status(), responseBody);
         
         switch (response.status()) {
             case 400:
@@ -56,7 +62,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
                 return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
-            // TODO: Log error but don't fail
+            logger.warn("Failed to extract response body", e);
         }
         return "";
     }
@@ -68,7 +74,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
                 return errorCode.equals(errorResponse.get("error"));
             }
         } catch (Exception e) {
-            // TODO: handle this
+            logger.debug("Failed to parse error response body: {}", responseBody, e);
         }
         return false;
     }
@@ -80,7 +86,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
                 return (String) errorResponse.get("message");
             }
         } catch (Exception e) {
-            // TODO: handle this
+            logger.debug("Failed to extract error message from response body: {}", responseBody, e);
         }
         return "Unknown error";
     }

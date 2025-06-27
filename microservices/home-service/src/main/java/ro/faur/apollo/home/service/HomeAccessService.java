@@ -1,7 +1,6 @@
 package ro.faur.apollo.home.service;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ro.faur.apollo.home.client.DeviceServiceClient;
 import ro.faur.apollo.home.client.UserServiceClient;
 import ro.faur.apollo.home.domain.GuestDeviceRights;
@@ -12,6 +11,8 @@ import ro.faur.apollo.home.repository.GuestDeviceRightsRepository;
 import ro.faur.apollo.home.repository.HomeGuestRepository;
 import ro.faur.apollo.home.repository.HomeRepository;
 import ro.faur.apollo.shared.dto.UserDTO;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,34 +26,35 @@ public class HomeAccessService {
     private final HomeGuestRepository homeGuestRepository;
     private final GuestDeviceRightsRepository guestDeviceRightsRepository;
     private final DeviceServiceClient deviceServiceClient;
+    private final TransactionTemplate transactionTemplate;
 
     public HomeAccessService(
             HomeRepository homeRepository, 
             UserServiceClient userServiceClient,
             HomeGuestRepository homeGuestRepository,
             GuestDeviceRightsRepository guestDeviceRightsRepository,
-            DeviceServiceClient deviceServiceClient
+            DeviceServiceClient deviceServiceClient,
+            PlatformTransactionManager transactionManager
     ) {
         this.homeRepository = homeRepository;
         this.userServiceClient = userServiceClient;
         this.homeGuestRepository = homeGuestRepository;
         this.guestDeviceRightsRepository = guestDeviceRightsRepository;
         this.deviceServiceClient = deviceServiceClient;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    @Transactional(readOnly = true)
     public List<AdminDTO> getHomeAdmins(String homeUuid) {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
 
-        List<String> adminUuids = home.getAdminUuids();
+        List<String> adminUuids = List.copyOf(home.getAdminUuids());
         List<UserDTO> users = userServiceClient.getUsersByUuids(adminUuids);
         return users.stream()
                 .map(user -> AdminDTO.fromUser(user.getUuid(), user.getEmail()))
                 .collect(Collectors.toList());
     }
 
-    @Transactional
     public void addHomeAdmin(String homeUuid, String email) {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
@@ -68,45 +70,44 @@ public class HomeAccessService {
             throw new IllegalArgumentException("User is already an admin of this home");
         }
 
-        home.getAdminUuids().add(user.getUuid());
-        homeRepository.save(home);
+        transactionTemplate.execute(status -> {
+            Home homeTx = homeRepository.findById(homeUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Home not found"));
+            homeTx.getAdminUuids().add(user.getUuid());
+            homeRepository.save(homeTx);
+            return null;
+        });
     }
 
-    @Transactional
     public void removeHomeAdmin(String homeUuid, String adminUuid) {
-        Home home = homeRepository.findById(homeUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Home not found"));
-
-        if (!home.getAdminUuids().contains(adminUuid)) {
-            throw new IllegalArgumentException("User is not an admin of this home");
-        }
-
-        if (home.getAdminUuids().size() == 1) {
-            throw new IllegalArgumentException("Cannot remove the last admin");
-        }
-
-        home.getAdminUuids().remove(adminUuid);
-        homeRepository.save(home);
+        transactionTemplate.execute(status -> {
+            Home homeTx = homeRepository.findById(homeUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Home not found"));
+            homeTx.getAdminUuids().remove(adminUuid);
+            homeRepository.save(homeTx);
+            return null;
+        });
     }
 
-    @Transactional(readOnly = true)
     public List<GuestDTO> getHomeGuests(String homeUuid) {
-        Home home = homeRepository.findById(homeUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Home not found"));
+        return transactionTemplate.execute(status -> {
+            Home homeTx = homeRepository.findById(homeUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Home not found"));
 
-        List<String> guestUuids = home.getGuests().stream()
-                .map(HomeGuest::getUserUuid)
-                .collect(Collectors.toList());
+            List<String> guestUuids = homeTx.getGuests().stream()
+                    .map(HomeGuest::getUserUuid)
+                    .collect(Collectors.toList());
 
-        List<UserDTO> users = userServiceClient.getUsersByUuids(guestUuids);
-        Map<String, String> emailByUuid = users.stream().collect(Collectors.toMap(UserDTO::getUuid, UserDTO::getEmail));
+            List<UserDTO> users = userServiceClient.getUsersByUuids(guestUuids);
+            Map<String, String> emailByUuid = users.stream()
+                    .collect(Collectors.toMap(UserDTO::getUuid, UserDTO::getEmail));
 
-        return home.getGuests().stream()
-                .map(guest -> GuestDTO.fromHomeGuest(guest, emailByUuid.getOrDefault(guest.getUserUuid(), null)))
-                .collect(Collectors.toList());
+            return homeTx.getGuests().stream()
+                    .map(guest -> GuestDTO.fromHomeGuest(guest, emailByUuid.getOrDefault(guest.getUserUuid(), null)))
+                    .collect(Collectors.toList());
+        });
     }
 
-    @Transactional
     public void addHomeGuest(String homeUuid, AddGuestRequestDTO request) {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
@@ -129,87 +130,64 @@ public class HomeAccessService {
         final HomeGuest guest = new HomeGuest();
         guest.setUserUuid(user.getUuid());
         guest.setHomeUuid(homeUuid);
-        home.getGuests().add(guest);
 
-        // Create device rights list before saving to ensure all devices exist
+        // Create device rights list (validation already passed)
         List<GuestDeviceRights> deviceRights = request.getDeviceRights().stream()
-                .map(rightDto -> {
-                    // Verify the device belongs to this home
-                    if (!home.getDeviceUuids().contains(rightDto.getDeviceId())) {
-                        throw new IllegalArgumentException("Device " + rightDto.getDeviceId() + " does not belong to this home");
-                    }
-
-                    // Verify device exists in device service
-                    try {
-                        deviceServiceClient.getDevice(rightDto.getDeviceId());
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException("Device not found: " + rightDto.getDeviceId());
-                    }
-
-                    return new GuestDeviceRights(guest, rightDto.getDeviceId(), rightDto.getRights());
-                })
+                .map(rightDto -> new GuestDeviceRights(guest, rightDto.getDeviceId(), rightDto.getRights()))
                 .collect(Collectors.toList());
 
-        // Set device rights before saving to ensure they're created in the same transaction
         guest.setDeviceRights(deviceRights);
 
-        // Save everything in one transaction
-        homeGuestRepository.save(guest);
-        homeRepository.save(home);
+        transactionTemplate.execute(status -> {
+            Home homeTx = homeRepository.findById(homeUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Home not found"));
+            homeTx.getGuests().add(guest);
+            homeGuestRepository.save(guest);
+            homeRepository.save(homeTx);
+            return null;
+        });
     }
 
-    @Transactional
     public void removeHomeGuest(String homeUuid, String guestUuid) {
-        Home home = homeRepository.findById(homeUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Home not found"));
+        transactionTemplate.execute(status -> {
+            Home homeTx = homeRepository.findById(homeUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Home not found"));
 
-        HomeGuest guest = homeGuestRepository.findById(guestUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
+            HomeGuest guest = homeGuestRepository.findById(guestUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
 
-        if (!guest.getHomeUuid().equals(homeUuid)) {
-            throw new IllegalArgumentException("Guest does not belong to this home");
-        }
+            if (!guest.getHomeUuid().equals(homeUuid)) {
+                throw new IllegalArgumentException("Guest does not belong to this home");
+            }
 
-        home.getGuests().remove(guest);
-        homeRepository.save(home);
+            homeTx.getGuests().remove(guest);
+            homeRepository.save(homeTx);
+            return null;
+        });
     }
 
-    @Transactional
     public void updateGuestDeviceRights(String homeUuid, String guestUuid, List<GuestDeviceRightsDTO> deviceRights) {
-        Home home = homeRepository.findById(homeUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Home not found"));
+        transactionTemplate.execute(status -> {
+            Home homeTx = homeRepository.findById(homeUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Home not found"));
 
-        HomeGuest guest = homeGuestRepository.findById(guestUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
+            HomeGuest guest = homeGuestRepository.findById(guestUuid)
+                    .orElseThrow(() -> new IllegalArgumentException("Guest not found"));
 
-        if (!guest.getHomeUuid().equals(homeUuid)) {
-            throw new IllegalArgumentException("Guest does not belong to this home");
-        }
+            if (!guest.getHomeUuid().equals(homeUuid)) {
+                throw new IllegalArgumentException("Guest does not belong to this home");
+            }
 
-        // Clear existing device rights
-        guest.getDeviceRights().clear();
+            // Clear existing device rights
+            guest.getDeviceRights().clear();
 
-        // Create new device rights
-        List<GuestDeviceRights> newRights = deviceRights.stream()
-                .map(rightDto -> {
-                    // Verify the device belongs to this home
-                    if (!home.getDeviceUuids().contains(rightDto.getDeviceId())) {
-                        throw new IllegalArgumentException("Device " + rightDto.getDeviceId() + " does not belong to this home");
-                    }
+            List<GuestDeviceRights> newRights = deviceRights.stream()
+                    .map(rightDto -> new GuestDeviceRights(guest, rightDto.getDeviceId(), rightDto.getRights()))
+                    .collect(Collectors.toList());
 
-                    // Verify device exists in device service
-                    try {
-                        deviceServiceClient.getDevice(rightDto.getDeviceId());
-                    } catch (Exception e) {
-                        throw new IllegalArgumentException("Device not found: " + rightDto.getDeviceId());
-                    }
-
-                    return new GuestDeviceRights(guest, rightDto.getDeviceId(), rightDto.getRights());
-                })
-                .collect(Collectors.toList());
-
-        // Add new device rights
-        guest.getDeviceRights().addAll(newRights);
-        homeGuestRepository.save(guest);
+            guest.getDeviceRights().addAll(newRights);
+            homeGuestRepository.save(guest);
+            return null;
+        });
     }
 } 

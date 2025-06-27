@@ -9,7 +9,7 @@ import java.util.Map;
 @FeignClient(
     name = "device-service",
     url = "${services.device.url:}",
-    fallback = DeviceServiceClientFallback.class
+    fallbackFactory = DeviceServiceClientFallback.class
 )
 @Primary
 public interface DeviceServiceClient {

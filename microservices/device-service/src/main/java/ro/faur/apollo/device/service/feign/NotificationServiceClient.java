@@ -10,7 +10,7 @@ import java.util.Map;
 @FeignClient(
         name = "notification-service",
         url = "${services.notification.url:}",
-        fallback = NotificationServiceClientFallback.class
+        fallbackFactory = NotificationServiceClientFallback.class
 )
 @Primary
 public interface NotificationServiceClient {

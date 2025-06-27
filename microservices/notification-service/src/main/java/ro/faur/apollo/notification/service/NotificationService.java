@@ -12,6 +12,8 @@ import ro.faur.apollo.shared.dto.HomeSummaryDTO;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.Cacheable;
+
 @Service
 public class NotificationService {
 
@@ -57,7 +59,8 @@ public class NotificationService {
         return convertToDTO(saved);
     }
 
-    private List<String> getUserAccessibleDevices(String userUuid) {
+    @Cacheable(value = "userAccessibleDevices", key = "#userUuid")
+    public List<String> getUserAccessibleDevices(String userUuid) {
         try {
             List<HomeSummaryDTO> summaries = homeServiceClient.getHomeSummariesForUser(userUuid);
 
