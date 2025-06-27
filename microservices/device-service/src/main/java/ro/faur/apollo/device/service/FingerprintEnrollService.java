@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ro.faur.apollo.device.domain.EnrollStatus;
 import ro.faur.apollo.device.domain.FingerprintEnrollStatus;
 import ro.faur.apollo.device.repository.DeviceRepository;
@@ -34,16 +35,8 @@ public class FingerprintEnrollService {
     }
 
     public void startEnrollment(String deviceUuid, int templateId, String hardwareId) {
-        // Update or create status with PENDING
-        FingerprintEnrollStatus status = statusRepository.findByDeviceUuid(deviceUuid);
-        if (status == null) {
-            status = new FingerprintEnrollStatus(deviceUuid, templateId, EnrollStatus.PENDING);
-        } else {
-            status.setTemplateId(templateId);
-            status.setStatus(EnrollStatus.PENDING);
-            status.setErrorCode(null);
-        }
-        statusRepository.save(status);
+        // Use atomic upsert to prevent race conditions
+        statusRepository.upsertStatus(deviceUuid, templateId, EnrollStatus.PENDING.name(), null);
 
         // Delegate MQTT publish to Notification Service
         Map<String, Object> payload = new HashMap<>();
@@ -62,12 +55,7 @@ public class FingerprintEnrollService {
     }
 
     public void updateStatus(String deviceUuid, EnrollStatus statusEnum, String errorCode) {
-        FingerprintEnrollStatus status = statusRepository.findByDeviceUuid(deviceUuid);
-        if (status == null) {
-            status = new FingerprintEnrollStatus(deviceUuid, null, statusEnum);
-        }
-        status.setStatus(statusEnum);
-        status.setErrorCode(errorCode);
-        statusRepository.save(status);
+        // Use atomic upsert to prevent race conditions
+        statusRepository.upsertStatus(deviceUuid, null, statusEnum.name(), errorCode);
     }
 } 
