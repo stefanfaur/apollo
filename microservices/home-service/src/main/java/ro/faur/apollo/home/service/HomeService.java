@@ -60,7 +60,30 @@ public class HomeService {
     @Transactional
     public List<HomeDTO> getHomesForUser(String userUuid) {
         List<Home> homes = homeRepository.findByAdminOrGuest(userUuid);
-        return homes.stream().map(this::convertToDTO).collect(Collectors.toList());
+
+        if (homes.isEmpty()) {
+            return List.of();
+        }
+
+        // 1. Collect all home UUIDs
+        List<String> homeUuids = homes.stream()
+                .map(Home::getUuid)
+                .collect(Collectors.toList());
+
+        // 2. Batch call to device-service to fetch devices for all homes at once
+        List<DeviceDTO> allDevices = deviceServiceClient.getDevicesByHomeUuids(homeUuids);
+
+        // 3. Group devices by homeUuid for quick lookup
+        var devicesByHome = allDevices.stream()
+                .collect(Collectors.groupingBy(DeviceDTO::getHomeUuid));
+
+        // 4. Map each home to DTO, inject corresponding devices
+        return homes.stream()
+                .map(home -> {
+                    List<DeviceDTO> devices = devicesByHome.getOrDefault(home.getUuid(), List.of());
+                    return homeDtoMapper.toDto(home, devices);
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -144,7 +167,7 @@ public class HomeService {
      */
     private HomeDTO convertToDTO(Home home) {
         try {
-            List<DeviceDTO> devices = deviceServiceClient.getDevicesByHome(home.getUuid());
+            List<DeviceDTO> devices = deviceServiceClient.getDevicesByHomeUuids(List.of(home.getUuid()));
             return homeDtoMapper.toDto(home, devices);
         } catch (Exception e) {
             HomeDTO homeDTO = homeDtoMapper.toDto(home);

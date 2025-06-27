@@ -33,12 +33,16 @@ public class NotificationService {
     public List<NotificationDTO> getNotificationsForUser(String userUuid) {
         try {
             List<String> deviceUuids = getUserAccessibleDevices(userUuid);
-            
-            List<Notification> notifications = notificationRepository.findAllByOrderByCreatedAtDesc()
-                    .stream()
-                    .filter(notification -> deviceUuids.contains(notification.getDeviceUuid()))
-                    .collect(Collectors.toList());
-                    
+
+            // If user has no accessible devices, return empty list to
+            // avoid an unnecessary database call.
+            if (deviceUuids.isEmpty()) {
+                return List.of();
+            }
+
+            List<Notification> notifications = notificationRepository
+                    .findByDeviceUuidInOrderByCreatedAtDesc(deviceUuids);
+
             return notifications.stream()
                     .map(this::convertToDTO)
                     .collect(Collectors.toList());

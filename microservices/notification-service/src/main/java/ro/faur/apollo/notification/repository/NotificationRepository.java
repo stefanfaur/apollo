@@ -12,4 +12,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
     List<Notification> findByDeviceUuid(String deviceUuid);
     
     List<Notification> findAllByOrderByCreatedAtDesc();
+
+    // Fetch only notifications belonging to the supplied devices.
+    List<Notification> findByDeviceUuidInOrderByCreatedAtDesc(List<String> deviceUuids);
 } 
