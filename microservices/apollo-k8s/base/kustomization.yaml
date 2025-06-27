@@ -10,6 +10,7 @@ resources:
   - infra/postgres.yaml
   - infra/mosquitto.yaml
   - infra/minio.yaml
+  - infra/clusterissuer-letsencrypt.yaml
   - infra/ingress.yaml
   
   # Applications
