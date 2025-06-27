@@ -1,0 +1,170 @@
+name: Release Microservices
+
+on:
+  push:
+    tags:
+      - '*.*.*-*'
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  build-and-release:
+    name: Build, create SBOMs and publish release
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ github.ref_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build jars and generate SBOMs
+        run: mvn -B -f microservices/pom.xml -DskipTests package
+
+      - name: Collect jars and SBOMs into release-assets directory
+        run: |
+          mkdir -p release-assets
+          # Collect jar files
+          find microservices -name "*.jar" -type f -exec cp {} release-assets/ \;
+          # Collect SBOMs (generated as bom.xml)
+          while read -r bom; do
+            service_dir=$(dirname "$bom")
+            service=$(basename "$(dirname "$service_dir")")
+            cp "$bom" "release-assets/${service}-sbom.xml"
+          done < <(find microservices -name "bom.xml" -type f)
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: release-assets/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload aggregated parent SBOM for apollo root project
+      - name: Upload SBOM apollo (aggregate)
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          projectName: apollo
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/target/bom.xml
+
+      # Upload SBOMs to Dependency-Track using the official action
+      - name: Upload SBOM shared-libs
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: shared-libs
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/shared-libs/target/bom.xml
+
+      - name: Upload SBOM user-service
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: user-service
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/user-service/target/bom.xml
+
+      - name: Upload SBOM device-service
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: device-service
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/device-service/target/bom.xml
+
+      - name: Upload SBOM media-analysis-service
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: media-analysis-service
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/media-analysis-service/target/bom.xml
+
+      - name: Upload SBOM home-service
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: home-service
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/home-service/target/bom.xml
+
+      - name: Upload SBOM notification-service
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: notification-service
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/notification-service/target/bom.xml
+
+      - name: Upload SBOM file-storage-service
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: file-storage-service
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/file-storage-service/target/bom.xml
+
+      - name: Upload SBOM api-gateway
+        uses: DependencyTrack/gh-upload-sbom@v3
+        with:
+          protocol: https
+          serverHostname: ${{ secrets.DEPENDENCY_TRACK_HOST }}
+          apiKey: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
+          autoCreate: true
+          parentName: apollo
+          parentVersion: ${{ env.RELEASE_VERSION }}
+          projectName: api-gateway
+          projectVersion: ${{ env.RELEASE_VERSION }}
+          bomFilename: microservices/api-gateway/target/bom.xml 

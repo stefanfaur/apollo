@@ -19,6 +19,7 @@
         <spring-boot.version>3.4.1</spring-boot.version>
         <spring-cloud.version>2024.0.0</spring-cloud.version>
         <spring-cloud-kubernetes.version>3.2.0</spring-cloud-kubernetes.version>
+        <cyclonedx.version>2.7.8</cyclonedx.version>
     </properties>
     
     <!-- All microservices as modules -->
@@ -91,6 +92,24 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        
+        <plugins>
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>${cyclonedx.version}</version>
+                <executions>
+                    <execution>
+                        <id>cyclonedx-bom</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>makeBom</goal>
+                            <goal>makeAggregateBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
     
     <profiles>
