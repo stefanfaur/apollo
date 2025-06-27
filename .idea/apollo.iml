@@ -5,8 +5,8 @@
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/ios/Pods" />
       <excludeFolder url="file://$MODULE_DIR$/safr-mobile/safr/ios/build" />
-      <excludeFolder url="file://$MODULE_DIR$/utils/loadtest/venv" />
       <excludeFolder url="file://$MODULE_DIR$/utils/mosquitto/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/utils/apollo_loadtest/venv" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

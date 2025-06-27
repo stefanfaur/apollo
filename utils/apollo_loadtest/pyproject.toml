@@ -1,0 +1,13 @@
+[project]
+name = "apollo-loadtest"
+version = "0.1.0"
+description = "Load testing suite for Apollo smart home system"
+requires-python = ">=3.8"
+dependencies = [
+    "locust>=2.24",
+    "paho-mqtt>=2.0",
+    "python-dotenv>=1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [] 

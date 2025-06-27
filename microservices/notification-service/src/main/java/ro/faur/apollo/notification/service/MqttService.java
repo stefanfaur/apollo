@@ -118,7 +118,7 @@ public class MqttService {
                 String notificationMessage = notifMsg.getMessage();
 
                 // Analyse media content with AI service, if any
-                if (notifMsg.getMediaUrl() != null) {
+                if (notifMsg.getMediaUrl() != null && !notifMsg.getMediaUrl().isBlank()) {
                     String mediaPath = notifMsg.getMediaUrl();
                     // Strip any leading slash so we don't end up with double slashes
                     if (mediaPath.startsWith("/")) {
