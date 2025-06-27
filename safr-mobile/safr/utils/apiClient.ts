@@ -39,10 +39,11 @@ apiClient.interceptors.response.use(
             console.warn("Bad Request! Showing alert.");
 
             // display the error message in an alert
-            console.log(error.response)
+            console.log(error)
             const message = error.response.data || "Bad Request";
             Alert.alert("Error", message);
         }
+        console.error("Response error:", error);
         return Promise.reject(error);
     }
 );
