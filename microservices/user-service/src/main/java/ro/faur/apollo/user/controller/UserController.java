@@ -54,4 +54,9 @@ public class UserController {
         return user.map(ResponseEntity::ok)
                   .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/batch")
+    public ResponseEntity<List<UserDTO>> getUsersByUuids(@RequestParam("uuids") List<String> uuids) {
+        return ResponseEntity.ok(userService.findByUuids(uuids));
+    }
 } 

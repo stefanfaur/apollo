@@ -25,4 +25,7 @@ public interface UserServiceClient {
 
     @GetMapping("/api/users/email/{email}")
     UserDTO getUserByEmail(@PathVariable String email);
+
+    @GetMapping("/api/users/batch")
+    List<UserDTO> getUsersByUuids(@RequestParam("uuids") List<String> uuids);
 } 

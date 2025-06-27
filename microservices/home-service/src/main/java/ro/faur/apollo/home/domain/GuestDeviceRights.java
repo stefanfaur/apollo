@@ -2,6 +2,9 @@ package ro.faur.apollo.home.domain;
 
 import jakarta.persistence.*;
 import ro.faur.apollo.shared.domain.BaseEntity;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.util.Set;
 
@@ -20,6 +23,8 @@ public class GuestDeviceRights extends BaseEntity {
     private String deviceUuid;
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @Fetch(FetchMode.SUBSELECT)
+    @BatchSize(size = 256)
     @CollectionTable(
             name = "guest_device_access_rights",
             joinColumns = @JoinColumn(name = "guest_device_rights_id")

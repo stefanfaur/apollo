@@ -2,6 +2,9 @@ package ro.faur.apollo.home.domain;
 
 import jakarta.persistence.*;
 import ro.faur.apollo.shared.domain.BaseEntity;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.FetchMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +19,20 @@ public class Home extends BaseEntity {
     private String address;
 
     @ElementCollection
+    @BatchSize(size = 256)
     @CollectionTable(name = "home_device_uuids", joinColumns = @JoinColumn(name = "home_uuid"))
     @Column(name = "device_uuid")
     private List<String> deviceUuids = new ArrayList<>();
 
     @ElementCollection
+    @BatchSize(size = 256)
     @CollectionTable(name = "home_admin_uuids", joinColumns = @JoinColumn(name = "home_uuid"))
     @Column(name = "admin_uuid")
     private List<String> adminUuids = new ArrayList<>();
 
-    @OneToMany(mappedBy = "homeUuid", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "homeUuid", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Fetch(FetchMode.SUBSELECT)
+    @BatchSize(size = 256)
     private List<HomeGuest> guests = new ArrayList<>();
 
     public Home(String name, String address) {

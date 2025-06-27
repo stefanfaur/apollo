@@ -26,4 +26,9 @@ public class UserServiceClientFallback implements UserServiceClient {
         // Return null when user service is unavailable
         return null;
     }
+
+    @Override
+    public List<UserDTO> getUsersByUuids(List<String> uuids) {
+        return Collections.emptyList();
+    }
 } 

@@ -10,6 +10,7 @@ import ro.faur.apollo.home.dto.DeviceDTO;
 import ro.faur.apollo.home.dto.HomeDTO;
 import ro.faur.apollo.home.mapper.HomeDtoMapper;
 import ro.faur.apollo.home.repository.HomeRepository;
+import ro.faur.apollo.home.dto.HomeSummaryDTO;
 
 import java.util.List;
 import java.util.Optional;
@@ -160,6 +161,14 @@ public class HomeService {
 
     public boolean isUserGuestOfHome(String userUuid, String homeUuid) {
         return homeRepository.isUserGuestOfHome(userUuid, homeUuid);
+    }
+
+    @Transactional
+    public List<HomeSummaryDTO> getHomeSummariesForUser(String userUuid) {
+        List<Home> homes = homeRepository.findByAdminOrGuest(userUuid);
+        return homes.stream()
+                .map(h -> new HomeSummaryDTO(h.getUuid(), List.copyOf(h.getDeviceUuids())))
+                .collect(Collectors.toList());
     }
 
     /**

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ro.faur.apollo.home.dto.*;
+import ro.faur.apollo.home.dto.HomeSummaryDTO;
 import ro.faur.apollo.home.service.HomeService;
 import ro.faur.apollo.home.service.HomeAccessService;
 import ro.faur.apollo.shared.security.UserContext;
@@ -211,5 +212,10 @@ public class HomeController {
             @PathVariable String userUuid) {
         boolean isGuest = homeService.isUserGuestOfHome(userUuid, homeUuid);
         return ResponseEntity.ok(isGuest);
+    }
+
+    @GetMapping("/summary/user/{userUuid}")
+    public ResponseEntity<List<HomeSummaryDTO>> getHomeSummariesForUser(@PathVariable String userUuid) {
+        return ResponseEntity.ok(homeService.getHomeSummariesForUser(userUuid));
     }
 } 

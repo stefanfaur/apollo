@@ -15,6 +15,7 @@ import ro.faur.apollo.shared.dto.UserDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 public class HomeAccessService {
@@ -44,15 +45,10 @@ public class HomeAccessService {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
 
-        return home.getAdminUuids().stream()
-                .map(adminUuid -> {
-                    try {
-                        UserDTO user = userServiceClient.getUserByUuid(adminUuid);
-                        return AdminDTO.fromUser(user.getUuid(), user.getEmail());
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to get admin user: " + adminUuid, e);
-                    }
-                })
+        List<String> adminUuids = home.getAdminUuids();
+        List<UserDTO> users = userServiceClient.getUsersByUuids(adminUuids);
+        return users.stream()
+                .map(user -> AdminDTO.fromUser(user.getUuid(), user.getEmail()))
                 .collect(Collectors.toList());
     }
 
@@ -98,17 +94,15 @@ public class HomeAccessService {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
 
+        List<String> guestUuids = home.getGuests().stream()
+                .map(HomeGuest::getUserUuid)
+                .collect(Collectors.toList());
+
+        List<UserDTO> users = userServiceClient.getUsersByUuids(guestUuids);
+        Map<String, String> emailByUuid = users.stream().collect(Collectors.toMap(UserDTO::getUuid, UserDTO::getEmail));
+
         return home.getGuests().stream()
-                .map(guest -> {
-                    try {
-                        UserDTO user = userServiceClient.getUserByUuid(guest.getUserUuid());
-                        return GuestDTO.fromHomeGuest(guest, user.getEmail());
-                    } catch (Exception e) {
-                        // User might have been deleted, skip this guest
-                        return null;
-                    }
-                })
-                .filter(guest -> guest != null)
+                .map(guest -> GuestDTO.fromHomeGuest(guest, emailByUuid.getOrDefault(guest.getUserUuid(), null)))
                 .collect(Collectors.toList());
     }
 

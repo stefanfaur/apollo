@@ -88,6 +88,13 @@ public class UserService {
                 .map(this::convertToDTO);
     }
 
+    public List<UserDTO> findByUuids(List<String> uuids) {
+        if (uuids == null || uuids.isEmpty()) return List.of();
+        return userRepository.findByUuidIn(uuids).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     private UserDTO convertToDTO(User user) {
         return new UserDTO(user.getUuid(), user.getUsername(), user.getEmail(), user.getRoles());
     }

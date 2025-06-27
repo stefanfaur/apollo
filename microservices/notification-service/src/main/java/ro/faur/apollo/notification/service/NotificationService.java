@@ -5,9 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ro.faur.apollo.notification.client.HomeServiceClient;
 import ro.faur.apollo.notification.domain.Notification;
-import ro.faur.apollo.notification.dto.HomeDTO;
 import ro.faur.apollo.notification.dto.NotificationDTO;
 import ro.faur.apollo.notification.repository.NotificationRepository;
+import ro.faur.apollo.shared.dto.HomeSummaryDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,10 +59,10 @@ public class NotificationService {
 
     private List<String> getUserAccessibleDevices(String userUuid) {
         try {
-            List<HomeDTO> homes = homeServiceClient.getHomesForUser(userUuid);
+            List<HomeSummaryDTO> summaries = homeServiceClient.getHomeSummariesForUser(userUuid);
 
-            return homes.stream()
-                    .map(HomeDTO::getDeviceUuids)
+            return summaries.stream()
+                    .map(HomeSummaryDTO::getDeviceUuids)
                     .flatMap(List::stream)
                     .distinct()
                     .collect(Collectors.toList());

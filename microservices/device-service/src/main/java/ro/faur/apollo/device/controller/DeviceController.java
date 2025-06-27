@@ -27,11 +27,6 @@ public class DeviceController {
         this.notificationServiceClient = notificationServiceClient;
     }
 
-    @GetMapping
-    public List<DeviceDTO> getAllDevices() {
-        return deviceService.getAllDevices();
-    }
-
     @GetMapping("/{deviceUuid}")
     public ResponseEntity<DeviceDTO> getDevice(@PathVariable String deviceUuid) {
         DeviceDTO device = deviceService.getDevice(deviceUuid);
