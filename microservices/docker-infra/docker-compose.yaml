@@ -1,8 +1,10 @@
 services:
   # Database
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-bullseye
     container_name: apollo-postgres
+    restart: unless-stopped
+    shm_size: 1gb
     environment:
       POSTGRES_DB: ${DB_NAME:-apollo_db}
       POSTGRES_USER: ${DB_USERNAME:-apollo}
@@ -13,6 +15,16 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - apollo-network
+    command: >
+      postgres
+      -c shared_buffers=2GB
+      -c effective_cache_size=6GB
+      -c work_mem=32MB
+      -c maintenance_work_mem=1GB
+      -c max_connections=200
+      -c wal_buffers=16MB
+      -c min_wal_size=1GB
+      -c max_wal_size=2GB
 
   # MinIO (S3 compatible storage)
   minio:
