@@ -55,7 +55,9 @@ public class MqttService {
 
     @PostConstruct
     public void initialize() {
-        this.linkPrefix = minioUrl + "/" + minioBucket;
+        // Ensure the prefix ends with a single slash so later concatenations don't miss it.
+        String rawPrefix = minioUrl + "/" + minioBucket;
+        this.linkPrefix = rawPrefix.endsWith("/") ? rawPrefix : rawPrefix + "/";
         try {
             mqttClient = new MqttClient(mqttBrokerUrl, MqttClient.generateClientId(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
@@ -117,7 +119,12 @@ public class MqttService {
 
                 // Analyse media content with AI service, if any
                 if (notifMsg.getMediaUrl() != null) {
-                    String mediaUrl = linkPrefix + notifMsg.getMediaUrl();
+                    String mediaPath = notifMsg.getMediaUrl();
+                    // Strip any leading slash so we don't end up with double slashes
+                    if (mediaPath.startsWith("/")) {
+                        mediaPath = mediaPath.substring(1);
+                    }
+                    String mediaUrl = linkPrefix + mediaPath;
                     notificationMessage = getMediaAnalysis(mediaUrl);
                 }
 
@@ -138,7 +145,11 @@ public class MqttService {
                 notification.setTitle(title);
                 notification.setMessage(notificationMessage);
                 if (notifMsg.getMediaUrl() != null) {
-                    notification.setMediaUrl(linkPrefix + notifMsg.getMediaUrl());
+                    String mediaPath = notifMsg.getMediaUrl();
+                    if (mediaPath.startsWith("/")) {
+                        mediaPath = mediaPath.substring(1);
+                    }
+                    notification.setMediaUrl(linkPrefix + mediaPath);
                 }
                 notification.setType(mappedType);
                 notification.setDeviceUuid(deviceUuid);
