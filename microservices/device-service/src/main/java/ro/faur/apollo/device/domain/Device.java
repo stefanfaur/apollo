@@ -5,6 +5,10 @@ import ro.faur.apollo.shared.domain.BaseEntity;
 import ro.faur.apollo.shared.dto.DeviceStatus;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_device_home_uuid", columnList = "home_uuid"),
+        @Index(name = "idx_device_hardware_id", columnList = "hardware_id")
+})
 public class Device extends BaseEntity {
 
     @Column(name = "name")

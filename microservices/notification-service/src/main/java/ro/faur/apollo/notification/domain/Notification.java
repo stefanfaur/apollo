@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import ro.faur.apollo.shared.domain.BaseEntity;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_notification_device_uuid", columnList = "device_uuid")
+})
 public class Notification extends BaseEntity {
 
     @Column(nullable = false)

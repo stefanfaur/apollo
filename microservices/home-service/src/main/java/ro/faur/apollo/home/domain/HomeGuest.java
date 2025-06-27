@@ -11,6 +11,10 @@ import java.util.List;
  * He cannot add or remove devices, but can control the ones he has access to.
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_home_guest_user_uuid", columnList = "user_uuid"),
+        @Index(name = "idx_home_guest_home_uuid", columnList = "home_uuid")
+})
 public class HomeGuest extends BaseEntity {
 
     @Column(name = "user_uuid", nullable = false)
