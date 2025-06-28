@@ -15,12 +15,12 @@ const char* DEFAULT_WIFI_SSID = "FRAME";
 const char* DEFAULT_WIFI_PASSWORD = "HY04IOABBA8GI";
 
 // MinIO configuration
-const char* MINIO_HOST = "192.168.2.125";
+const char* MINIO_HOST = "192.168.2.186";
 const int MINIO_PORT = 9000;
 const char* MINIO_BUCKET = "apollo-bucket/uploads/";
 
 // MQTT configuration
-const char* MQTT_BROKER = "192.168.2.125";
+const char* MQTT_BROKER = "192.168.2.186";
 const int MQTT_PORT = 1883;
 const char* MQTT_NOTIFICATION_TOPIC = "devices/notifications";
 const char* MQTT_UNLOCK_TOPIC = "devices/commands/unlock";

@@ -29,7 +29,7 @@ public class SecurityConfig extends BaseSecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/actuator/**").permitAll() // Health checks
                         .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll() // OpenAPI docs
-                        .requestMatchers("/api/files/presigned-url").permitAll()
+                        .requestMatchers("/api/files/**").permitAll()
                         .anyRequest().authenticated() // All other require authentication
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)

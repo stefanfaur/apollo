@@ -18,6 +18,8 @@ import ro.faur.apollo.notification.dto.mqtt.NotificationMessage;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +33,9 @@ public class MqttService {
     private final DeviceServiceClient deviceServiceClient;
     private final MediaAnalysisServiceClient mediaAnalysisServiceClient;
     private final ExecutorService executorService;
+    private final ScheduledExecutorService scheduledExecutorService;
     private MqttClient mqttClient;
+    private volatile boolean connected = false;
 
     @Value("${mqtt.broker.url}")
     private String mqttBrokerUrl;
@@ -41,6 +45,8 @@ public class MqttService {
     private String minioBucket;
 
     private String linkPrefix;
+    private static final int MAX_RETRY_ATTEMPTS = 10;
+    private static final long INITIAL_RETRY_DELAY_MS = 5000;
 
     public MqttService(NotificationService notificationService,
                        ObjectMapper objectMapper,
@@ -51,6 +57,7 @@ public class MqttService {
         this.deviceServiceClient = deviceServiceClient;
         this.mediaAnalysisServiceClient = mediaAnalysisServiceClient;
         this.executorService = Executors.newFixedThreadPool(10);
+        this.scheduledExecutorService = Executors.newScheduledThreadPool(2);
     }
 
     @PostConstruct
@@ -58,24 +65,105 @@ public class MqttService {
         // Ensure the prefix ends with a single slash so later concatenations don't miss it.
         String rawPrefix = minioUrl + "/" + minioBucket;
         this.linkPrefix = rawPrefix.endsWith("/") ? rawPrefix : rawPrefix + "/";
-        try {
-            mqttClient = new MqttClient(mqttBrokerUrl, MqttClient.generateClientId(), new MemoryPersistence());
-            MqttConnectOptions options = new MqttConnectOptions();
-            options.setAutomaticReconnect(true);
-            options.setCleanSession(true);
-            mqttClient.connect(options);
-            subscribeToTopics();
-        } catch (MqttException e) {
-            logger.error("Failed to connect to MQTT broker at {}: {}", mqttBrokerUrl, e.getMessage());
-            throw new RuntimeException("Could not connect to MQTT broker", e);
+        
+        // Start MQTT connection in background - don't fail application startup
+        logger.info("Starting MQTT connection to broker at: {}", mqttBrokerUrl);
+        scheduledExecutorService.execute(this::connectWithRetry);
+    }
+
+    private void connectWithRetry() {
+        int attempt = 0;
+        long delay = INITIAL_RETRY_DELAY_MS;
+
+        while (attempt < MAX_RETRY_ATTEMPTS && !connected) {
+            try {
+                attempt++;
+                logger.info("MQTT connection attempt {} of {}", attempt, MAX_RETRY_ATTEMPTS);
+                
+                connectToMqtt();
+                connected = true;
+                logger.info("Successfully connected to MQTT broker at: {}", mqttBrokerUrl);
+                
+            } catch (Exception e) {
+                logger.warn("MQTT connection attempt {} failed: {}. Retrying in {}ms", 
+                           attempt, e.getMessage(), delay);
+                
+                if (attempt < MAX_RETRY_ATTEMPTS) {
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        logger.error("MQTT connection retry interrupted");
+                        return;
+                    }
+                    delay = Math.min(delay * 2, 60000); // Exponential backoff, max 60 seconds
+                } else {
+                    logger.error("Failed to connect to MQTT broker after {} attempts. MQTT functionality will be disabled.", MAX_RETRY_ATTEMPTS);
+                }
+            }
         }
     }
 
+    private void connectToMqtt() throws MqttException {
+        if (mqttClient != null && mqttClient.isConnected()) {
+            return;
+        }
+
+        mqttClient = new MqttClient(mqttBrokerUrl, MqttClient.generateClientId(), new MemoryPersistence());
+        
+        MqttConnectOptions options = new MqttConnectOptions();
+        options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);  // Force MQTT v3.1.1 like working client
+        options.setAutomaticReconnect(true);
+        options.setCleanSession(true);
+        options.setConnectionTimeout(10);
+        options.setKeepAliveInterval(60);  // Match working client's 60-second keepalive
+        options.setMaxInflight(10);
+        options.setServerURIs(new String[]{mqttBrokerUrl});
+        
+        // Set callback for connection events
+        mqttClient.setCallback(new MqttCallbackExtended() {
+            @Override
+            public void connectComplete(boolean reconnect, String serverURI) {
+                logger.info("MQTT connection established to: {} (reconnect: {})", serverURI, reconnect);
+                connected = true;
+                try {
+                    subscribeToTopics();
+                } catch (MqttException e) {
+                    logger.error("Failed to subscribe to topics after connection", e);
+                }
+            }
+
+            @Override
+            public void connectionLost(Throwable cause) {
+                logger.warn("MQTT connection lost: {}", cause.getMessage());
+                connected = false;
+            }
+
+            @Override
+            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                // This is handled by individual topic subscriptions
+            }
+
+            @Override
+            public void deliveryComplete(IMqttDeliveryToken token) {
+                // Not used for subscriptions
+            }
+        });
+
+        mqttClient.connect(options);
+        subscribeToTopics();
+    }
+
     private void subscribeToTopics() throws MqttException {
+        if (mqttClient == null || !mqttClient.isConnected()) {
+            logger.warn("Cannot subscribe to topics - MQTT client not connected");
+            return;
+        }
+        
         mqttClient.subscribe("devices/hello", this::handleHelloMessage);
         mqttClient.subscribe("devices/notifications", this::handleNotificationMessage);
         mqttClient.subscribe("doorlock/+/enroll/status", this::handleEnrollStatusMessage);
-        logger.info("Subscribed to MQTT topics: devices/hello and devices/notifications");
+        logger.info("Subscribed to MQTT topics: devices/hello, devices/notifications, and doorlock/+/enroll/status");
     }
 
     private void handleHelloMessage(String topic, MqttMessage message) {
@@ -191,14 +279,21 @@ public class MqttService {
     }
 
     public void disconnect() throws MqttException {
-        if (mqttClient.isConnected()) {
+        if (mqttClient != null && mqttClient.isConnected()) {
             mqttClient.disconnect();
             logger.info("Disconnected from MQTT broker");
         }
+        executorService.shutdown();
+        scheduledExecutorService.shutdown();
     }
 
     // Publish enroll start command on behalf of Device Service
     public void publishEnrollStart(String hardwareId, int userFpId) {
+        if (!isConnected()) {
+            logger.warn("Cannot publish enroll start - MQTT not connected");
+            return;
+        }
+        
         Map<String, Object> payload = new HashMap<>();
         payload.put("hardwareId", hardwareId);
         payload.put("user_fp_id", userFpId);
@@ -281,6 +376,11 @@ public class MqttService {
     }
 
     public void publishUnlock(String hardwareId) {
+        if (!isConnected()) {
+            logger.warn("Cannot publish unlock command - MQTT not connected");
+            return;
+        }
+        
         try {
             String json = objectMapper.writeValueAsString(Map.of("hardwareId", hardwareId));
             MqttMessage msg = new MqttMessage(json.getBytes(StandardCharsets.UTF_8));
@@ -289,5 +389,9 @@ public class MqttService {
         } catch (Exception e) {
             logger.error("Failed to publish unlock", e);
         }
+    }
+    
+    public boolean isConnected() {
+        return connected && mqttClient != null && mqttClient.isConnected();
     }
 } 
