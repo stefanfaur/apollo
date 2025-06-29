@@ -28,14 +28,15 @@ RUN addgroup -g 1001 -S apollo && \
 # Set working directory
 WORKDIR /app
 
-# Download Pyroscope Java agent
-RUN wget -O pyroscope.jar https://github.com/grafana/pyroscope-java/releases/download/v2.1.2/pyroscope.jar
+# Download Pyroscope Java agent and OpenTelemetry Java agent
+RUN wget -O pyroscope.jar https://github.com/grafana/pyroscope-java/releases/download/v2.1.2/pyroscope.jar && \
+    wget -O opentelemetry-javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v1.32.0/opentelemetry-javaagent-1.32.0.jar
 
 # Copy the built JAR
 COPY --from=builder /app/file-storage-service/target/*.jar app.jar
 
 # Change ownership to apollo user
-RUN chown apollo:apollo app.jar pyroscope.jar
+RUN chown apollo:apollo app.jar pyroscope.jar opentelemetry-javaagent.jar
 
 # Switch to non-root user
 USER apollo
@@ -48,4 +49,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8086/actuator/health || exit 1
 
 # Run the application with Pyroscope agent
-ENTRYPOINT ["java", "-javaagent:pyroscope.jar", "-jar", "app.jar"] 
+ENTRYPOINT ["java", "-javaagent:opentelemetry-javaagent.jar", "-javaagent:pyroscope.jar", "-jar", "app.jar"] 
