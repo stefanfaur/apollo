@@ -75,7 +75,7 @@ void setup() {
   sensorManager.begin();
   
   // Add sensors to manager
-  sensorManager.addSensor(0, MOTION_SENSOR_PIN, INPUT);        // PIR motion sensor (analog output)
+  // sensorManager.addSensor(0, MOTION_SENSOR_PIN, INPUT);        // PIR motion sensor (analog output)
   sensorManager.addSensor(1, DOOR_SENSOR1_PIN, INPUT_PULLUP);  // Door sensor #1 (reed switch)
   sensorManager.addSensor(2, DOOR_SENSOR2_PIN, INPUT_PULLUP);  // Door sensor #2 (reed switch)
   

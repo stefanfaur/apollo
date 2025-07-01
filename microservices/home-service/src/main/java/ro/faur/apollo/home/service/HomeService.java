@@ -13,6 +13,7 @@ import ro.faur.apollo.home.dto.HomeSummaryDTO;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -101,6 +102,7 @@ public class HomeService {
         return deviceServiceClient.getDevicesByHome(homeUuid);
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public DeviceDTO createDeviceInHome(String homeUuid, String name, String deviceType, String description, String hardwareId) {
         if (!homeRepository.existsById(homeUuid)) {
             throw new IllegalArgumentException("Home not found for UUID: " + homeUuid);
@@ -124,6 +126,7 @@ public class HomeService {
         return createdDevice;
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public boolean unlinkDeviceFromHome(String homeUuid, String deviceUuid) {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found for UUID: " + homeUuid));

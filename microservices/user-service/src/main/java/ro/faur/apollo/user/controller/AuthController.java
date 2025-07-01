@@ -56,12 +56,33 @@ public class AuthController {
 
     @PostMapping("/oauth2/login/google")
     public ResponseEntity<?> oauth2Login(@RequestParam("token") String googleToken) {
+        log.info("Google OAuth2 login request received");
+        log.debug("Request parameter 'token' present: {}", googleToken != null && !googleToken.trim().isEmpty());
+        
         try {
+            if (googleToken == null || googleToken.trim().isEmpty()) {
+                log.warn("Google OAuth2 login attempt with empty or null token");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Google token is required");
+            }
+            
+            log.debug("Calling authService.authenticateWithGoogle()");
             String jwt = authService.authenticateWithGoogle(googleToken);
+            log.info("Google OAuth2 login successful, returning JWT response");
             return ResponseEntity.ok(new JwtResponse(jwt));
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Google OAuth2 login failed - Invalid token: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Google token: " + e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Google OAuth2 login failed - Runtime error: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Authentication service error: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Google OAuth2 login error: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
+            log.error("Google OAuth2 login error - Unexpected exception", e);
+            log.error("Exception class: {}, Message: {}", e.getClass().getSimpleName(), e.getMessage());
+            if (e.getCause() != null) {
+                log.error("Root cause: {}: {}", e.getCause().getClass().getSimpleName(), e.getCause().getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Google OAuth authentication failed");
         }
     }
 } 

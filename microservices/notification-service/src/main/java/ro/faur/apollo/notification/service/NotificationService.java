@@ -12,7 +12,7 @@ import ro.faur.apollo.shared.dto.HomeSummaryDTO;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class NotificationService {
@@ -34,7 +34,7 @@ public class NotificationService {
 
     public List<NotificationDTO> getNotificationsForUser(String userUuid) {
         try {
-            List<String> deviceUuids = getUserAccessibleDevices(userUuid);
+            List<String> deviceUuids = getUserAccessibleDevicesInternal(userUuid);
 
             // If user has no accessible devices, return empty list to
             // avoid an unnecessary database call.
@@ -59,8 +59,11 @@ public class NotificationService {
         return convertToDTO(saved);
     }
 
-    @Cacheable(value = "userAccessibleDevices", key = "#userUuid")
-    public List<String> getUserAccessibleDevices(String userUuid) {
+    /**
+     * Internal method to get user accessible devices without caching.
+     * This allows the Feign circuit breaker and fallback to work properly.
+     */
+    private List<String> getUserAccessibleDevicesInternal(String userUuid) {
         try {
             List<HomeSummaryDTO> summaries = homeServiceClient.getHomeSummariesForUser(userUuid);
 
@@ -70,9 +73,59 @@ public class NotificationService {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("Error getting accessible devices for user {}", userUuid, e);
+            // Log connection failures at DEBUG level to reduce noise, since this is handled gracefully
+            if (e.getMessage() != null && e.getMessage().contains("Connection refused")) {
+                logger.debug("Home service unavailable for user {}, falling back to empty list", userUuid);
+            } else {
+                logger.warn("Failed to get accessible devices for user {}, falling back to empty list: {}", userUuid, e.getMessage());
+            }
+            // Return empty list as fallback - this matches the behavior of HomeServiceClientFallback
             return List.of();
         }
+    }
+
+    /**
+     * Public method for external access to user accessible devices.
+     * This can be called directly when caching is not needed.
+     */
+    public List<String> getUserAccessibleDevices(String userUuid) {
+        return getUserAccessibleDevicesInternal(userUuid);
+    }
+
+    /**
+     * Evicts the user notifications cache for a specific user.
+     * This should be called when a user's device access changes.
+     */
+    @CacheEvict(value = "userNotifications", key = "#userUuid")
+    public void evictUserNotificationsCache(String userUuid) {
+        logger.debug("Evicted userNotifications cache for user: {}", userUuid);
+    }
+
+    /**
+     * Evicts the user accessible devices cache for a specific user.
+     * This should be called when a user's device access changes (e.g., devices added/removed from homes).
+     */
+    @CacheEvict(value = "userAccessibleDevices", key = "#userUuid")
+    public void evictUserAccessibleDevicesCache(String userUuid) {
+        logger.debug("Evicted userAccessibleDevices cache for user: {}", userUuid);
+    }
+
+    /**
+     * Evicts the entire user accessible devices cache.
+     * This should be called when global device access changes that affect multiple users.
+     */
+    @CacheEvict(value = "userAccessibleDevices", allEntries = true)
+    public void evictAllUserAccessibleDevicesCache() {
+        logger.debug("Evicted all userAccessibleDevices cache entries");
+    }
+
+    /**
+     * Evicts all notification-related caches.
+     * This should be called when global changes affect multiple users.
+     */
+    @CacheEvict(value = {"userNotifications", "userAccessibleDevices"}, allEntries = true)
+    public void evictAllCaches() {
+        logger.debug("Evicted all notification-related caches");
     }
 
     private NotificationDTO convertToDTO(Notification notification) {
