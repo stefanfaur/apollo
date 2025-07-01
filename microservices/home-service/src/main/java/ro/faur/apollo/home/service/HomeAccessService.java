@@ -13,6 +13,7 @@ import ro.faur.apollo.home.repository.HomeRepository;
 import ro.faur.apollo.shared.dto.UserDTO;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,6 +56,7 @@ public class HomeAccessService {
                 .collect(Collectors.toList());
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public void addHomeAdmin(String homeUuid, String email) {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
@@ -79,6 +81,7 @@ public class HomeAccessService {
         });
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public void removeHomeAdmin(String homeUuid, String adminUuid) {
         transactionTemplate.execute(status -> {
             Home homeTx = homeRepository.findById(homeUuid)
@@ -108,6 +111,7 @@ public class HomeAccessService {
         });
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public void addHomeGuest(String homeUuid, AddGuestRequestDTO request) {
         Home home = homeRepository.findById(homeUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Home not found"));
@@ -148,6 +152,7 @@ public class HomeAccessService {
         });
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public void removeHomeGuest(String homeUuid, String guestUuid) {
         transactionTemplate.execute(status -> {
             Home homeTx = homeRepository.findById(homeUuid)
@@ -166,6 +171,7 @@ public class HomeAccessService {
         });
     }
 
+    @CacheEvict(value = "homeSummaries", allEntries = true)
     public void updateGuestDeviceRights(String homeUuid, String guestUuid, List<GuestDeviceRightsDTO> deviceRights) {
         transactionTemplate.execute(status -> {
             Home homeTx = homeRepository.findById(homeUuid)

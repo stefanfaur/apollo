@@ -18,6 +18,6 @@ public interface HomeServiceClient {
     @GetMapping("/api/home/user/{userUuid}")
     List<HomeDTO> getHomesForUser(@PathVariable String userUuid);
 
-    @GetMapping("/api/home/summary/user/{userUuid}")
+    @GetMapping("/internal/home/summary/user/{userUuid}")
     List<HomeSummaryDTO> getHomeSummariesForUser(@PathVariable String userUuid);
 } 
