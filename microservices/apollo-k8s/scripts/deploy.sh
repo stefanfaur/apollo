@@ -149,6 +149,27 @@ handle_secrets() {
     fi
 }
 
+# Install cert-manager (required for ClusterIssuer)
+install_cert_manager() {
+    echo -e "${YELLOW}🔐 Installing cert-manager...${NC}"
+    
+    # Add Helm repository
+    helm repo add jetstack https://charts.jetstack.io
+    helm repo update
+    
+    # Install cert-manager if not already installed
+    if ! kubectl get namespace cert-manager &> /dev/null; then
+        helm upgrade --install cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set installCRDs=true \
+            $(if [[ "$QUICK_MODE" == "false" ]]; then echo "--wait"; fi)
+        echo -e "${GREEN}✅ cert-manager installed${NC}"
+    else
+        echo -e "${GREEN}✅ cert-manager already installed${NC}"
+    fi
+}
+
 # Deploy applications
 deploy_applications() {
     echo -e "${YELLOW}🚀 Deploying Apollo applications...${NC}"
@@ -192,7 +213,6 @@ deploy_monitoring() {
     echo -e "${BLUE}📚 Adding Helm repositories...${NC}"
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
     helm repo add grafana https://grafana.github.io/helm-charts
-    helm repo add jetstack https://charts.jetstack.io
     helm repo update
     
     # Install Prometheus Operator CRDs first (required for ServiceMonitor)
@@ -224,17 +244,8 @@ deploy_monitoring() {
         echo -e "${YELLOW}⚡ Skipping MinIO rollout wait (quick mode)${NC}"
     fi
     
-    # Install cert-manager (required by Tempo Operator)
-    echo -e "${BLUE}🔐 Installing cert-manager...${NC}"
-    if ! kubectl get namespace cert-manager &> /dev/null; then
-        helm upgrade --install cert-manager jetstack/cert-manager \
-            --namespace cert-manager \
-            --create-namespace \
-            --set installCRDs=true \
-            $(if [[ "$QUICK_MODE" == "false" ]]; then echo "--wait"; fi)
-    else
-        echo -e "${GREEN}✅ cert-manager already installed${NC}"
-    fi
+    # cert-manager is already installed (required by Tempo Operator)
+    echo -e "${GREEN}✅ cert-manager already available${NC}"
     
     # Install Tempo Operator
     echo -e "${BLUE}🔍 Installing Tempo Operator...${NC}"
@@ -315,8 +326,8 @@ display_access_info() {
     echo -e "  🏗️  k3d cluster '$CLUSTER_NAME' created"
     echo -e "  📦 Docker images loaded into cluster"  
     echo -e "  🔐 Secrets created from .env file"
+    echo -e "  🔐 cert-manager deployed (required for ClusterIssuer and Tempo Operator)"
     echo -e "  🚀 All Apollo microservices deployed"
-    echo -e "  🔐 cert-manager deployed (required for Tempo Operator)"
     echo -e "  🔍 Tempo Operator deployed with TempoMonolithic CRD"
     echo -e "  📊 Complete monitoring stack deployed (Prometheus, Grafana, Loki, Tempo via Operator, Pyroscope)"
     echo ""
@@ -340,6 +351,7 @@ main() {
     create_cluster
     load_images
     handle_secrets
+    install_cert_manager
     deploy_applications
     deploy_monitoring
     display_access_info
