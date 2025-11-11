@@ -1,84 +1,80 @@
-# APOLLO: SISTEM DE GESTIONARE A SECURITĂȚII LOCUINȚEI
+# apollo: OSS home security management software
 
-Codul sursă este disponibil pe GitHub https://github.com/stefanfaur/apollo.
+# 1. Component Description
 
-# 1. Descrierea Componentelor
-Apollo este un sistem de gestionare a securității locuinței, format din:
-* Componente principale:
-  * Aplicație mobilă - `safr-mobile/safr`
-  * Backend - microservicii Java - `microservices`
-  * Infrastructură - baze de date, MQTT, MinIO - `microservices/docker-infra`
-* Componente auxiliare:
-  * Simulator de dispozitive hardware - `utils/device-simulator/apollo-sim`
-  * Unelte de testare - `utils/apollo-loadtest`
-  * Monitorizare - `microservices/apollo-k8s/`
+Apollo is a home security management system, consisting of:
 
-# 2. Compilarea și rularea proiectului
+* Main components:
+  * Mobile application - `safr-mobile/safr`
+  * Backend - Java microservices - `microservices`
+  * Infrastructure - databases, MQTT, MinIO - `microservices/docker-infra`
+* Auxiliary components:
+  * Hardware device simulator - `utils/device-simulator/apollo-sim`
+  * Testing tools - `utils/apollo-loadtest`
+  * Monitoring - `microservices/apollo-k8s/`
 
-## 1. Aplicația Mobilă
+# 2. Project Compilation and Execution
 
-### 1.1 Instalare dependințe
+## 1. Mobile Application
 
-Aplicația mobilă se află în directorul `safr-mobile/safr`. 
-Pentru a instala dependențele necesare, asigurați-vă că aveți Node.js și npm instalate pe sistemul dumneavoastră. Apoi, rulați următoarele comenzi în terminal:
+### 1.1 Installing Dependencies
+
+The mobile app is located in the `safr-mobile/safr` directory. 
+To install the required dependencies, make sure you have Node.js and npm installed on your system. Then, run the following commands in your terminal:
 
 ```bash
-
 cd safr-mobile/safr
 npm install
 ```
 
-### 1.2 Rularea aplicației
+### 1.2 Running the Application
 
-Aplicația poate fi rulată pe un emulator Android, un simulator iOS, pe un dispozitiv fizic prin intermediul Expo Go sau direct în browser. 
-Pentru a rula aplicația, utilizați comanda:
+The app can be run on an Android emulator, an iOS simulator, a physical device using Expo Go, or directly in the browser. 
+To run the app, use the command:
 
 ```bash
-
 npx expo start
 ```
 
-Aceasta deschide un meniu în terminal în care puteți alege unde rulați aplicația.
+This opens a terminal menu where you can choose where to run the app.
 
 
-## 2. Backend-ul
+## 2. Backend
 
-Microserviciile se configurează prin variabile de mediu(incluse la sfârșitul acestui fișier).
+The microservices are configured via environment variables (included at the end of this file).
 
-Acestea pot fi setate în terminal (prin `source .env`) înainte de a rula microserviciile sau pot fi incluse într-un fișier `.env` și încărcate în fiecare serviciu folosind pluginul `EnvFile` pentru IntelliJ.
+These can be set in the terminal (using `source .env`) before running the microservices or included in a `.env` file and loaded in each service using the `EnvFile` plugin for IntelliJ.
 
-### 2.1 Instalare dependințe și compilare
+### 2.1 Installing Dependencies and Compilation
 
-Backend-ul se află în directorul `microservices` și poate fi compilat și rulat fie folosind Java, fie folosind Docker.
+The backend is located in the `microservices` directory and can be built and run either using Java or Docker.
 
-#### 2.1.1 Rularea cu Java
+#### 2.1.1 Running with Java
 
-Pentru baza de date, MQTT și MinIO, asigurați-vă că aveți Docker și Docker Compose instalate.
-Pentru a le porni rulați:
+For the database, MQTT, and MinIO, make sure you have Docker and Docker Compose installed.
+To start them, run:
 
 ```bash
-
 cd microservices/docker-infra
 docker-compose up -d
 ```
-Asigurați-vă că aveți Java JDK și Maven instalat, apoi rulați:
+
+Ensure you have Java JDK and Maven installed, then run:
 
 ```bash
-
 cd microservices
-# Descarcă dependențele și compilează fiecare microserviciu
+# Download dependencies and build each microservice
 mvn clean install
 ```
 
-Dacă se deschide proiectul în IntelliJ IDEA, puteți rula fiecare microserviciu direct din IDE, folosind sectiunea "Services" din partea stângă a ecranului.
+If the project is opened in IntelliJ IDEA, you can run each microservice directly from the IDE, using the "Services" section on the left side of the screen.
 
-Pentru a rula fără IntelliJ, utilizați comenzile:
+To run without IntelliJ, use the following commands:
 
 ```bash
-
-# prima data puneți fișierul .env în directorul microservices
+# first place the .env file in the microservices directory
 source .env
-# rulați fiecare microserviciu în terminal, detașat
+# run each microservice in a detached terminal
 java -jar api-gateway/target/api-gateway-*.jar &
 java -jar user-service/target/user-service-*.jar &
 java -jar device-service/target/device-service-*.jar &
@@ -88,41 +84,41 @@ java -jar notification-service/target/notification-service-*.jar &
 java -jar file-storage-service/target/file-storage-service-*.jar &
 ```
 
-Pentru a opri toate microserviciile, puteți utiliza comanda `kill` în terminal pentru a termina procesele Java:
-```bash
+To stop all microservices, you can use the `kill` command in the terminal to terminate the Java processes:
 
+```bash
 kill $(ps aux | grep '[j]ava' | awk '{print $2}')
 ```
 
-#### 2.1.2 Rularea cu Docker
+#### 2.1.2 Running with Docker
 
-Pentru a rula microserviciile folosind Docker, asigurați-vă că aveți Docker și Docker Compose instalate. Apoi rulați următoarele comenzi:
+To run the microservices using Docker, make sure you have Docker and Docker Compose installed. Then, run the following commands:
 
 ```bash
 cd microservices
-# Această comandă va construi toate microserviciile, le va împacheta în imagini și le va stoca în registrul local Docker.
+# This command will build all microservices, package them into images, and store them in the local Docker registry.
 docker compose build
-# Această comandă va porni toate microserviciile în fundal, împreună cu infrastructura.
+# This command will start all microservices in the background, along with the infrastructure.
 docker compose up -d
 ```
 
-Pentru a opri toate microserviciile, utilizați:
+To stop all microservices, use:
 
 ```bash
-
-# În directorul microservices
+# In the microservices directory
 docker compose down
 ```
 
-## 3. Uneltele de testare/depanare
+## 3. Testing and Debugging Tools
 
 ### 3.1 Swagger UI
-Swagger UI este disponibil pentru toate microserviciile prin intermediul API Gateway, la adresa `http://localhost:8080/swagger-ui.html`. Acesta oferă o interfață pentru a explora și testa toate API-urile microserviciilor.
 
-### 3.2 Simulatorul dispozitivelor hardware
+Swagger UI is available for all microservices through the API Gateway at `http://localhost:8080/swagger-ui.html`. It provides an interface to explore and test all microservice APIs.
 
-Pentru a simula dispozitivele hardware, puteți utiliza simulatorul disponibil în directorul `utils/device-simulator/apollo-sim`. Acesta permite simularea dispozitivelor IoT și testarea interacțiunilor cu backend-ul.
-Acesta este un proiect React care poate fi rulat cu:
+### 3.2 Hardware Device Simulator
+
+To simulate hardware devices, you can use the simulator available in the `utils/device-simulator/apollo-sim` directory. It allows the simulation of IoT devices and testing interactions with the backend.
+This is a React project that can be run with:
 
 ```bash
 cd utils/device-simulator/apollo-sim
@@ -130,47 +126,44 @@ npm install
 npm start
 ```
 
-### 3.3 Load Testing cu Locust
+### 3.3 Load Testing with Locust
 
-Pentru a rula teste de încarcare, rulați următoarele comenzi:
+To run load tests, execute the following commands:
 
 ```bash
-
 cd utils/apollo-loadtest
 locust -f locustfile.py --host=http://localhost:8080
 ```
-Apoi din interfața web, configurați numărul de utilizatori și rata de creștere, apoi porniți testul.
 
-### 3.4 Monitorizare cu Grafana
+Then, from the web interface, configure the number of users and spawn rate, and start the test.
 
-Stack-ul de monitorizare este disponibil doar în Kubernetes/K3s.
+### 3.4 Monitoring with Grafana
 
-Se poate accesa Grafana public la adresa https://grafana.faur.sh cu utilizatorul `admin` și parola `apollo123`.
-Datele se pot expora în secțiunea DrillDown sau in Dashboard-uri. De menționat că resursele deployment-ului respectiv nu sunt ridicate, așa că timpii de răspuns pot fi mari, mai ales la load test.
+The monitoring stack is available only in Kubernetes/K3s.
 
-Dacă aveți `k3d` instalat, puteti rula următoarele comenzi pentru a porni un cluster K3s local cu monitorizare:
+Grafana can be accessed publicly at https://grafana.faur.sh with user `admin` and password `apollo123`.
+Data can be explored in the DrillDown section or in Dashboards. Note that the deployment resources are limited, so response times may be high, especially during load testing.
+
+If you have `k3d` installed, you can run the following commands to start a local K3s cluster with monitoring:
 
 ```bash
-
 cd microservices/apollo-k8s
 sudo ./scripts/deploy.sh
 ```
 
-## 4. Fisierul `.env`
+## 4. The `.env` File
 
-Comisia de evaluare în README-ul trimis are la dispozitie un fișier `.env` cu variabilele de mediu necesare pentru rularea microserviciilor și testarea funcționalităților complete.
+The evaluation committee in the submitted README has access to a `.env` file with the environment variables required to run the microservices and test the complete functionality.
 
-Un alt utilizator poate crea un fișier `.env` în directorul `microservices`, utilizând următorul șablon:
-
+Another user can create a `.env` file in the `microservices` directory using the following template:
 
 ```bash
-
 cd microservices
 cp env.template .env
-# se completează variabilele din fișierul .env după copiere
-#apoi se setează variabilele de mediu în terminal
+# fill in the variables in the .env file after copying
+# then set the environment variables in the terminal
 ./scripts/setup-local-env.sh
-# sau se poate folosi IntelliJ cu pluginul EnvFile pentru a încărca variabilele
-# sau
+# or use IntelliJ with the EnvFile plugin to load the variables
+# or
 source .env
 ```
